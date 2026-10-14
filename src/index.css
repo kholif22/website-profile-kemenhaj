@@ -1,0 +1,450 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   CSS VARIABLES — PLHUT MAGETAN DESIGN SYSTEM
+   ============================================ */
+:root {
+  --color-gold: #D4AF37;
+  --color-gold-dark: #B88A24;
+  --color-gold-light: #F5C542;
+  --color-black: #171717;
+  --color-white: #FFFFFF;
+  --color-bg: #F8F7F2;
+  --color-border: #E8E3D5;
+  --color-text-primary: #222222;
+  --color-text-secondary: #777777;
+  --color-success: #16a34a;
+  --color-error: #dc2626;
+  --color-warning: #d97706;
+  --color-info: #2563eb;
+  --radius-card: 14px;
+  --shadow-card: 0 2px 16px rgba(0,0,0,0.07);
+  --shadow-card-hover: 0 8px 32px rgba(0,0,0,0.12);
+  --transition: all 0.2s ease;
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: 'Poppins', 'Inter', system-ui, sans-serif;
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    line-height: 1.6;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    color: var(--color-black);
+    line-height: 1.3;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #f1ede2;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-gold-dark);
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-gold);
+  }
+
+  /* Focus styles */
+  *:focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+/* ============================================
+   COMPONENT CLASSES
+   ============================================ */
+@layer components {
+
+  /* ----- CARDS ----- */
+  .card {
+    background: var(--color-white);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    transition: var(--transition);
+    border: 1px solid var(--color-border);
+  }
+
+  .card:hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  .card-gold {
+    background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-dark) 100%);
+    border-radius: var(--radius-card);
+    color: var(--color-white);
+  }
+
+  /* ----- BUTTONS ----- */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 font-semibold text-sm rounded-xl transition-all duration-200 active:scale-95;
+    background: var(--color-gold);
+    color: var(--color-black);
+    border: none;
+    cursor: pointer;
+  }
+
+  .btn-primary:hover {
+    background: var(--color-gold-dark);
+    box-shadow: 0 4px 16px rgba(212,175,55,0.4);
+    transform: translateY(-1px);
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 font-semibold text-sm rounded-xl border-2 transition-all duration-200 active:scale-95;
+    background: transparent;
+    color: var(--color-gold);
+    border-color: var(--color-gold);
+    cursor: pointer;
+  }
+
+  .btn-secondary:hover {
+    background: var(--color-gold);
+    color: var(--color-black);
+  }
+
+  .btn-outline-dark {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 font-semibold text-sm rounded-xl border-2 transition-all duration-200;
+    background: transparent;
+    color: var(--color-white);
+    border-color: rgba(255,255,255,0.5);
+    cursor: pointer;
+  }
+
+  .btn-outline-dark:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: var(--color-white);
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200;
+    background: #fef2f2;
+    color: var(--color-error);
+    border: 1px solid #fecaca;
+  }
+
+  .btn-danger:hover {
+    background: var(--color-error);
+    color: white;
+  }
+
+  /* ----- INPUTS ----- */
+  .input-field {
+    @apply w-full px-4 py-3 text-sm rounded-xl border transition-all duration-200;
+    background: var(--color-white);
+    border-color: var(--color-border);
+    color: var(--color-text-primary);
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .input-field:focus {
+    outline: none;
+    border-color: var(--color-gold);
+    box-shadow: 0 0 0 3px rgba(212,175,55,0.15);
+  }
+
+  .input-field::placeholder {
+    color: var(--color-text-secondary);
+  }
+
+  .input-label {
+    @apply block text-sm font-medium mb-1.5;
+    color: var(--color-text-primary);
+  }
+
+  /* ----- BADGES ----- */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+
+  .badge-gold { background: rgba(212,175,55,0.15); color: var(--color-gold-dark); }
+  .badge-success { background: #dcfce7; color: #16a34a; }
+  .badge-error { background: #fef2f2; color: #dc2626; }
+  .badge-warning { background: #fffbeb; color: #d97706; }
+  .badge-info { background: #eff6ff; color: #2563eb; }
+  .badge-gray { background: #f3f4f6; color: #6b7280; }
+
+  /* ----- SECTION TITLE ----- */
+  .section-title {
+    @apply text-2xl md:text-3xl font-bold text-center;
+    color: var(--color-black);
+  }
+
+  .section-subtitle {
+    @apply text-center text-sm md:text-base max-w-2xl mx-auto mt-3;
+    color: var(--color-text-secondary);
+  }
+
+  .section-divider {
+    @apply flex justify-center mt-4 mb-10;
+  }
+
+  .section-divider::after {
+    content: '';
+    display: block;
+    width: 60px;
+    height: 3px;
+    background: var(--color-gold);
+    border-radius: 4px;
+  }
+
+  /* ----- SIDEBAR ADMIN ----- */
+  .sidebar-link {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200;
+    color: rgba(255,255,255,0.7);
+  }
+
+  .sidebar-link:hover {
+    background: rgba(255,255,255,0.08);
+    color: white;
+  }
+
+  .sidebar-link.active {
+    background: var(--color-gold);
+    color: var(--color-black);
+    font-weight: 600;
+  }
+
+  /* ----- TABLE ----- */
+  .table-responsive {
+    overflow-x: auto;
+    border-radius: var(--radius-card);
+  }
+
+  .admin-table {
+    @apply w-full text-sm;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .admin-table thead tr th {
+    @apply px-4 py-3 text-left font-semibold text-xs uppercase tracking-wider;
+    background: var(--color-bg);
+    color: var(--color-text-secondary);
+    border-bottom: 2px solid var(--color-border);
+  }
+
+  .admin-table tbody tr {
+    border-bottom: 1px solid var(--color-border);
+    transition: background 0.15s ease;
+  }
+
+  .admin-table tbody tr:hover {
+    background: #fffdf5;
+  }
+
+  .admin-table tbody tr td {
+    @apply px-4 py-3;
+    color: var(--color-text-primary);
+  }
+
+  /* ----- PAGE HEADER ----- */
+  .page-header {
+    @apply py-12 md:py-20;
+    background: linear-gradient(135deg, var(--color-black) 0%, #2d2d2d 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .page-header::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(212,175,55,0.15) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+
+  /* ----- ACCORDION ----- */
+  .accordion-item {
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+
+  .accordion-trigger {
+    @apply w-full flex items-center justify-between px-5 py-4 text-left font-medium text-sm cursor-pointer transition-all duration-200;
+    background: var(--color-white);
+    color: var(--color-text-primary);
+  }
+
+  .accordion-trigger:hover {
+    background: #fdfbf4;
+  }
+
+  .accordion-trigger.open {
+    background: var(--color-gold);
+    color: var(--color-black);
+  }
+
+  .accordion-content {
+    @apply px-5 py-4 text-sm;
+    background: #fdfbf4;
+    color: var(--color-text-secondary);
+    border-top: 1px solid var(--color-border);
+    line-height: 1.7;
+  }
+
+  /* ----- STAT CARD ----- */
+  .stat-card {
+    @apply p-5 flex items-center gap-4;
+    background: var(--color-white);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--color-border);
+    transition: var(--transition);
+  }
+
+  .stat-card:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
+  }
+
+  .stat-icon {
+    @apply w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0;
+    background: rgba(212,175,55,0.12);
+    color: var(--color-gold-dark);
+  }
+
+  /* ----- GOLD GRADIENT TEXT ----- */
+  .text-gold-gradient {
+    background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-dark) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ----- GOLD BORDER ----- */
+  .border-gold {
+    border-color: var(--color-gold) !important;
+  }
+
+  /* ----- HERO OVERLAY ----- */
+  .hero-overlay {
+    background: linear-gradient(
+      135deg,
+      rgba(23,23,23,0.92) 0%,
+      rgba(23,23,23,0.75) 50%,
+      rgba(180,140,0,0.3) 100%
+    );
+  }
+
+  /* ----- LOADING SKELETON ----- */
+  .skeleton {
+    background: linear-gradient(90deg, #f0ebe0 25%, #e8e1ce 50%, #f0ebe0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 8px;
+  }
+
+  /* ----- EMPTY STATE ----- */
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-16 px-4 text-center;
+  }
+
+  .empty-state-icon {
+    @apply w-16 h-16 mb-4 opacity-30;
+    color: var(--color-gold);
+  }
+}
+
+/* ============================================
+   UTILITIES
+   ============================================ */
+@layer utilities {
+  .gold-gradient {
+    background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-dark) 100%);
+  }
+
+  .dark-gradient {
+    background: linear-gradient(135deg, var(--color-black) 0%, #2d2d2d 100%);
+  }
+
+  .text-gold { color: var(--color-gold) !important; }
+  .text-gold-dark { color: var(--color-gold-dark) !important; }
+  .bg-gold { background-color: var(--color-gold) !important; }
+  .bg-plhut-black { background-color: var(--color-black) !important; }
+  .bg-plhut-bg { background-color: var(--color-bg) !important; }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+/* ============================================
+   RICH TEXT CONTENT
+   ============================================ */
+.prose-plhut {
+  line-height: 1.8;
+  color: var(--color-text-primary);
+}
+
+.prose-plhut h2 { font-size: 1.375rem; font-weight: 700; margin: 1.5rem 0 0.75rem; color: var(--color-black); }
+.prose-plhut h3 { font-size: 1.125rem; font-weight: 600; margin: 1.25rem 0 0.5rem; }
+.prose-plhut p { margin-bottom: 1rem; }
+.prose-plhut ul { list-style: disc; margin-left: 1.5rem; margin-bottom: 1rem; }
+.prose-plhut ol { list-style: decimal; margin-left: 1.5rem; margin-bottom: 1rem; }
+.prose-plhut li { margin-bottom: 0.25rem; }
+.prose-plhut a { color: var(--color-gold-dark); text-decoration: underline; }
+.prose-plhut blockquote { border-left: 4px solid var(--color-gold); padding-left: 1rem; color: var(--color-text-secondary); font-style: italic; }
+
+/* ============================================
+   REACT DATEPICKER OVERRIDE
+   ============================================ */
+.react-datepicker-wrapper { width: 100%; }
+.react-datepicker__input-container input { @apply input-field; }
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; }
+}

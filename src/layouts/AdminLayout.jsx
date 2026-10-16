@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import PageFallback from '../components/PageFallback';
 import toast from 'react-hot-toast';
 import {
   LayoutDashboard, Newspaper, Megaphone, CalendarDays, BookOpen,
@@ -10,7 +11,7 @@ import {
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
-  { icon: BookOpen, label: 'Profil Instansi', path: '/admin/profil' },
+  { icon: BookOpen, label: 'Profil Instansi', path: '/admin/profil', adminOnly: true },
   { icon: Newspaper, label: 'Manajemen Berita', path: '/admin/berita' },
   { icon: Megaphone, label: 'Pengumuman', path: '/admin/pengumuman' },
   { icon: CalendarDays, label: 'Agenda Manasik', path: '/admin/agenda' },
@@ -18,8 +19,8 @@ const menuItems = [
   { icon: HelpCircle, label: 'Manajemen FAQ', path: '/admin/faq' },
   { icon: MessageSquare, label: 'Pengaduan', path: '/admin/pengaduan' },
   { icon: Activity, label: 'Riwayat Aktivitas', path: '/admin/aktivitas' },
-  { icon: Users, label: 'Pengguna', path: '/admin/pengguna' },
-  { icon: Settings, label: 'Pengaturan Website', path: '/admin/pengaturan' },
+  { icon: Users, label: 'Pengguna', path: '/admin/pengguna', adminOnly: true },
+  { icon: Settings, label: 'Pengaturan Website', path: '/admin/pengaturan', adminOnly: true },
 ];
 
 export default function AdminLayout() {
@@ -27,6 +28,8 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebar, setMobileSidebar] = useState(false);
+
+  const visibleMenuItems = menuItems.filter((item) => !item.adminOnly || user?.role === 'admin');
 
   const handleLogout = () => {
     logout();
@@ -53,7 +56,7 @@ export default function AdminLayout() {
 
       {/* Nav items */}
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-        {menuItems.map(({ icon: Icon, label, path }) => (
+        {visibleMenuItems.map(({ icon: Icon, label, path }) => (
           <NavLink
             key={path}
             to={path}
@@ -163,7 +166,9 @@ export default function AdminLayout() {
         {/* Page content */}
         <main className="flex-1 overflow-y-auto">
           <div className="p-4 md:p-6">
-            <Outlet />
+            <Suspense fallback={<PageFallback />}>
+              <Outlet />
+            </Suspense>
           </div>
         </main>
       </div>

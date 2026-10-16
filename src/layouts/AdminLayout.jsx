@@ -133,7 +133,7 @@ export default function AdminLayout() {
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top header */}
-        <header className="bg-white flex-shrink-0 flex items-center justify-between px-4 md:px-6 h-14 shadow-sm" style={{ borderBottom: '1px solid var(--color-border)' }}>
+        <header className="bg-white flex-shrink-0 flex items-center justify-between px-4 md:px-6 h-14 shadow-xs" style={{ borderBottom: '1px solid var(--color-border)' }}>
           <div className="flex items-center gap-3">
             {/* Desktop sidebar toggle */}
             <button

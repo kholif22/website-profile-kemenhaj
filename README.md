@@ -103,8 +103,8 @@ ADMIN_PASSWORD=<ganti-dengan-sandi-kuat-minimal-12-karakter>
 ---
 
 ## 3. Stack Teknologi & Arsitektur
-- **Frontend:** React 18 + Vite + Tailwind CSS
-- **Routing:** React Router DOM v6
+- **Frontend:** React 18 + Vite + Tailwind CSS 4 (plugin `@tailwindcss/postcss`)
+- **Routing:** React Router DOM v7
 - **Animasi & Notifikasi:** Framer Motion + React Hot Toast
 - **Chart / Visualisasi:** Recharts
 - **Backend:** Node.js + Express.js (ES Module)
@@ -116,6 +116,8 @@ ADMIN_PASSWORD=<ganti-dengan-sandi-kuat-minimal-12-karakter>
   - Pembatasan laju permintaan (*Rate Limiting*) pada login dan formulir publik
   - Validasi ketat payload menggunakan `express-validator`
   - Sanitasi file upload menggunakan `multer` dengan penamaan acak unik
+
+> **Catatan Tailwind CSS 4:** konfigurasi tema masih memakai `tailwind.config.js`, dimuat melalui direktif `@config` di `src/index.css` sehingga warna, font, dan radius kustom tetap berlaku. Beberapa utility Tailwind 3 sudah berganti nama di versi 4 dan telah disesuaikan agar tampilan identik: `shadow-sm` → `shadow-xs`, `outline-none` → `outline-hidden`. Warna border bawaan (yang di v4 berubah menjadi `currentColor`) dikembalikan ke `gray-200` melalui aturan kompatibilitas di `@layer base`.
 
 ---
 

@@ -1,8 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../tailwind.config.js";
 
 /* ============================================
    CSS VARIABLES — PLHUT MAGETAN DESIGN SYSTEM
@@ -31,6 +30,16 @@
    BASE STYLES
    ============================================ */
 @layer base {
+  /* Kompatibilitas Tailwind 4: pada v3 warna border bawaan adalah gray-200,
+     sedangkan v4 memakai currentColor. Dikembalikan agar tampilan tidak berubah. */
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, #e5e7eb);
+  }
+
   * {
     margin: 0;
     padding: 0;

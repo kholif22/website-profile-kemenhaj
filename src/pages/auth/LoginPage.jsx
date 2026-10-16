@@ -79,7 +79,7 @@ export default function LoginPage() {
                 type="text"
                 autoComplete="username"
                 required
-                className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-3 pl-11 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
+                className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-3 pl-11 text-xs text-white placeholder-gray-500 focus:outline-hidden focus:border-yellow-500 transition-colors"
                 placeholder="hajimagetan atau nama@plhut-magetan.go.id"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -96,7 +96,7 @@ export default function LoginPage() {
               <input
                 type="password"
                 required
-                className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-3 pl-11 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
+                className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-3 pl-11 text-xs text-white placeholder-gray-500 focus:outline-hidden focus:border-yellow-500 transition-colors"
                 placeholder="••••••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

@@ -112,7 +112,7 @@ export default function NewsDetailPage() {
 
           {/* Featured Image */}
           {article.image && (
-            <div className="mb-8 rounded-2xl overflow-hidden shadow-sm">
+            <div className="mb-8 rounded-2xl overflow-hidden shadow-xs">
               <img
                 src={article.image}
                 alt={article.title}

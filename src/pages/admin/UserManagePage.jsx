@@ -179,7 +179,7 @@ export default function UserManagePage() {
                         <button
                           onClick={() => openEditForm(item)}
                           className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-700 transition-colors"
-                          title="Edit"
+                          title="Edit" aria-label="Edit pengguna"
                         >
                           <Edit3 size={15} />
                         </button>
@@ -187,7 +187,7 @@ export default function UserManagePage() {
                           <button
                             onClick={() => setDeleteId(item.id)}
                             className="p-1.5 rounded-lg hover:bg-red-50 text-red-600 transition-colors"
-                            title="Hapus"
+                            title="Hapus" aria-label="Hapus pengguna"
                           >
                             <Trash2 size={15} />
                           </button>

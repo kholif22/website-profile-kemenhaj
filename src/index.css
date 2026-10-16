@@ -16,7 +16,7 @@
   --color-bg: #F8F7F2;
   --color-border: #E8E3D5;
   --color-text-primary: #222222;
-  --color-text-secondary: #777777;
+  --color-text-secondary: #6B6B6B;
   --color-success: #16a34a;
   --color-error: #dc2626;
   --color-warning: #d97706;
@@ -434,12 +434,6 @@
 .prose-plhut li { margin-bottom: 0.25rem; }
 .prose-plhut a { color: var(--color-gold-dark); text-decoration: underline; }
 .prose-plhut blockquote { border-left: 4px solid var(--color-gold); padding-left: 1rem; color: var(--color-text-secondary); font-style: italic; }
-
-/* ============================================
-   REACT DATEPICKER OVERRIDE
-   ============================================ */
-.react-datepicker-wrapper { width: 100%; }
-.react-datepicker__input-container input { @apply input-field; }
 
 /* ============================================
    PRINT STYLES

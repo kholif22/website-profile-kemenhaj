@@ -67,10 +67,13 @@ export default function PublicNavbar() {
                 item.children ? (
                   <div key={item.label} className="relative">
                     <button
+                      type="button"
                       className="flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors hover:text-white"
                       style={{ color: 'rgba(255,255,255,0.8)' }}
+                      onClick={() => setDropdownOpen(dropdownOpen === item.label ? null : item.label)}
                       onMouseEnter={() => setDropdownOpen(item.label)}
                       onMouseLeave={() => setDropdownOpen(null)}
+                      onKeyDown={(e) => { if (e.key === 'Escape') setDropdownOpen(null); }}
                       aria-haspopup="true"
                       aria-expanded={dropdownOpen === item.label}
                     >

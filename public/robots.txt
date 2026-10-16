@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api
+
+# Sitemap: <isi URL domain resmi>/sitemap.xml  (aktifkan setelah domain final ditetapkan)

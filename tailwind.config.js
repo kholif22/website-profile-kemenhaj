@@ -14,7 +14,7 @@ export default {
           bg: '#F8F7F2',
           border: '#E8E3D5',
           'text-primary': '#222222',
-          'text-secondary': '#777777',
+          'text-secondary': '#6B6B6B',
         }
       },
       fontFamily: {

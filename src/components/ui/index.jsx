@@ -38,7 +38,7 @@ export function LoadingSpinner({ size = 'md', text = 'Memuat...' }) {
   const sizes = { sm: 'w-5 h-5', md: 'w-8 h-8', lg: 'w-12 h-12' };
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-10">
-      <div className={`${sizes[size]} border-3 border-t-transparent rounded-full animate-spin`} style={{ borderColor: 'rgba(212,175,55,0.3)', borderTopColor: '#D4AF37', borderWidth: '3px' }} />
+      <div className={`${sizes[size]} border-[3px] border-t-transparent rounded-full animate-spin`} style={{ borderColor: 'rgba(212,175,55,0.3)', borderTopColor: '#D4AF37', borderWidth: '3px' }} />
       {text && <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{text}</p>}
     </div>
   );

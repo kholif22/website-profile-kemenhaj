@@ -1,7 +1,7 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import { getDatabase } from '../models/database.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, optionalAuth } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
 import { logActivity } from '../middleware/activityLogger.js';
 import { sanitizeHtml } from '../utils/sanitize.js';
@@ -11,10 +11,13 @@ const router = express.Router();
 const slugify = (text) => text.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim();
 
 // GET /api/news (public)
-router.get('/', async (req, res) => {
+// Pengunjung tanpa login selalu dibatasi ke berita yang sudah terbit.
+// Hanya pengguna yang sudah login (editor/admin) yang boleh memakai status=all/draft.
+router.get('/', optionalAuth, async (req, res) => {
   try {
     const db = await getDatabase();
-    const { category, status = 'published', search, page = 1, limit = 9 } = req.query;
+    const { category, search, page = 1, limit = 9 } = req.query;
+    const status = req.user ? (req.query.status || 'published') : 'published';
     let query = `SELECT id, title, slug, excerpt, content, image, category, status, published_at, created_at FROM news WHERE 1=1`;
     const params = [];
     if (status !== 'all') { query += ` AND status = ?`; params.push(status); }

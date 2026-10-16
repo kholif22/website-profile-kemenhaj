@@ -42,7 +42,6 @@ export const authAPI = {
 export const settingsAPI = {
   getAll: () => api.get('/settings'),
   update: (data) => api.put('/settings', data),
-  uploadFile: (formData) => api.post('/settings/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
 };
 
 // ============================================================

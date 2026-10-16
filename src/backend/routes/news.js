@@ -4,6 +4,7 @@ import { getDatabase } from '../models/database.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
 import { logActivity } from '../middleware/activityLogger.js';
+import { sanitizeHtml } from '../utils/sanitize.js';
 
 const router = express.Router();
 
@@ -14,12 +15,17 @@ router.get('/', async (req, res) => {
   try {
     const db = await getDatabase();
     const { category, status = 'published', search, page = 1, limit = 9 } = req.query;
-    let query = `SELECT id, title, slug, excerpt, image, category, status, published_at, created_at FROM news WHERE 1=1`;
+    let query = `SELECT id, title, slug, excerpt, content, image, category, status, published_at, created_at FROM news WHERE 1=1`;
     const params = [];
     if (status !== 'all') { query += ` AND status = ?`; params.push(status); }
     if (category) { query += ` AND category = ?`; params.push(category); }
     if (search) { query += ` AND (title LIKE ? OR excerpt LIKE ?)`; params.push(`%${search}%`, `%${search}%`); }
-    const totalRow = await db.get(`SELECT COUNT(*) as total FROM news WHERE 1=1${status !== 'all' ? ` AND status = '${status}'` : ''}${category ? ` AND category = '${category}'` : ''}${search ? ` AND (title LIKE '%${search}%' OR excerpt LIKE '%${search}%')` : ''}`);
+    let countQuery = `SELECT COUNT(*) as total FROM news WHERE 1=1`;
+    const countParams = [];
+    if (status !== 'all') { countQuery += ` AND status = ?`; countParams.push(status); }
+    if (category) { countQuery += ` AND category = ?`; countParams.push(category); }
+    if (search) { countQuery += ` AND (title LIKE ? OR excerpt LIKE ?)`; countParams.push(`%${search}%`, `%${search}%`); }
+    const totalRow = await db.get(countQuery, countParams);
     query += ` ORDER BY published_at DESC, created_at DESC LIMIT ? OFFSET ?`;
     const offset = (parseInt(page) - 1) * parseInt(limit);
     params.push(parseInt(limit), offset);
@@ -64,7 +70,7 @@ router.post('/', authenticateToken, upload.single('image'),
       const published_at = status === 'published' ? new Date().toISOString() : null;
       const result = await db.run(
         `INSERT INTO news (title, slug, excerpt, content, image, category, status, published_at, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [title, slug, excerpt || '', content, image, category, status, published_at, req.user.id]
+        [title, slug, excerpt || '', sanitizeHtml(content), image, category, status, published_at, req.user.id]
       );
       await logActivity(req.user.id, req.user.name, `Menambahkan berita: ${title}`, 'news', result.lastID, title);
       res.status(201).json({ id: result.lastID, slug, message: 'Berita berhasil disimpan.' });
@@ -95,7 +101,7 @@ router.put('/:id', authenticateToken, upload.single('image'),
       const published_at = status === 'published' ? (existing.published_at || new Date().toISOString()) : null;
       await db.run(
         `UPDATE news SET title=?, excerpt=?, content=?, image=?, category=?, status=?, published_at=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`,
-        [title, excerpt || '', content, image, category, status, published_at, req.params.id]
+        [title, excerpt || '', sanitizeHtml(content), image, category, status, published_at, req.params.id]
       );
       await logActivity(req.user.id, req.user.name, `Mengubah berita: ${title}`, 'news', req.params.id, title);
       res.json({ message: 'Berita berhasil diperbarui.' });

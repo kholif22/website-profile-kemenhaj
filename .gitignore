@@ -7,4 +7,6 @@ uploads/*.png
 uploads/*.gif
 uploads/*.webp
 database/*.db
+database/*.db-shm
+database/*.db-wal
 *.log

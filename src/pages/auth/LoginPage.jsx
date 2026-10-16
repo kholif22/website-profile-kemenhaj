@@ -121,11 +121,10 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        {/* Demo credentials hint for convenience */}
+        {/* Security notice */}
         <div className="mt-6 p-3 rounded-xl bg-stone-900/80 border border-stone-800 text-[11px] text-gray-400 text-center">
-          <span className="block text-gray-300 font-semibold mb-0.5">Akun Demo Default:</span>
-          Email: <code className="text-yellow-500 font-mono">admin@plhut-magetan.go.id</code><br />
-          Sandi: <code className="text-yellow-500 font-mono">Admin@PLHUT2025</code>
+          <span className="block text-gray-300 font-semibold mb-0.5">Pemberitahuan Keamanan:</span>
+          Akses panel ini terbatas untuk petugas resmi. Hubungi administrator sistem apabila Anda memerlukan akun atau mengalami kendala login.
         </div>
       </div>
     </div>

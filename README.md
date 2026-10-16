@@ -73,10 +73,14 @@ Website resmi profil instansi, pusat informasi, dan dashboard pelayanan digital 
 ---
 
 ### Dashboard Administrator (Terproteksi Autentikasi)
-Akses melalui `/admin/login`:
-- **Akun Default Demo:**
-  - Email: `admin@plhut-magetan.go.id`
-  - Password: `Admin@PLHUT2025`
+Akses melalui `/admin/login`. Akun administrator dibuat otomatis saat pertama kali server dijalankan. Kredensial awal **wajib diganti** sebelum digunakan. Untuk mengatur akun, atur variabel lingkungan berikut sebelum menjalankan server:
+
+```env
+ADMIN_EMAIL=admin@plhut-magetan.go.id
+ADMIN_PASSWORD=<ganti-dengan-sandi-kuat-minimal-12-karakter>
+```
+
+> Catatan keamanan: jangan pernah menampilkan atau menyimpan kredensial admin di kode maupun dokumentasi.
 
 **Fitur Dashboard:**
 1. **Ringkasan Statistik Aktual (`/admin`):**
@@ -136,11 +140,16 @@ Akses melalui `/admin/login`:
    Salin `.env.example` menjadi `.env` (sudah disediakan default):
    ```env
    PORT=3000
-   JWT_SECRET=plhut_magetan_secure_jwt_token_secret_key_2025_kemenag
+   JWT_SECRET=<ganti-dengan-string-acak-minimal-32-karakter>
    NODE_ENV=development
    UPLOAD_DIR=uploads
    MAX_FILE_SIZE=5242880
+   # Opsional: kredensial admin awal (dipakai hanya saat seed pertama kali)
+   ADMIN_EMAIL=admin@plhut-magetan.go.id
+   ADMIN_PASSWORD=<sandi-kuat-minimal-12-karakter>
    ```
+
+   > Server akan **menolak start** bila `JWT_SECRET` kosong atau kurang dari 32 karakter.
 
 4. Jalankan aplikasi dalam mode pengembangan:
    - **Mode Fullstack Sekaligus (Vite Dev Server dengan Proxy API):**

@@ -7,7 +7,7 @@ import crypto from 'crypto';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const uploadsDir = path.join(__dirname, '../../../../uploads');
+const uploadsDir = path.join(__dirname, '../../../uploads');
 if (!existsSync(uploadsDir)) mkdirSync(uploadsDir, { recursive: true });
 
 const storage = multer.diskStorage({
@@ -19,11 +19,18 @@ const storage = multer.diskStorage({
   },
 });
 
+const allowedExt = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+const allowedMime = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
 const fileFilter = (req, file, cb) => {
-  const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
   const ext = path.extname(file.originalname).toLowerCase();
-  if (allowed.includes(ext)) cb(null, true);
-  else cb(new Error('Tipe file tidak diizinkan. Gunakan JPG, PNG, WEBP, atau GIF.'));
+  if (allowedExt.includes(ext) && allowedMime.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    const err = new Error('Tipe file tidak diizinkan. Gunakan JPG, PNG, WEBP, atau GIF.');
+    err.status = 400;
+    cb(err);
+  }
 };
 
 export const upload = multer({

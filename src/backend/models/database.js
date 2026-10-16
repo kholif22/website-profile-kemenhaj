@@ -1,6 +1,7 @@
 import { open } from 'sqlite';
 import sqlite3 from 'sqlite3';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync, mkdirSync } from 'fs';
@@ -8,7 +9,7 @@ import { existsSync, mkdirSync } from 'fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const dbDir = path.join(__dirname, '../../../../database');
+const dbDir = path.join(__dirname, '../../../database');
 if (!existsSync(dbDir)) mkdirSync(dbDir, { recursive: true });
 
 let db;
@@ -139,6 +140,8 @@ export async function initializeDatabase() {
     entity_title TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
+  await db.run(`CREATE INDEX IF NOT EXISTS idx_activity_created ON activity_logs(created_at)`);
+  await db.run(`CREATE INDEX IF NOT EXISTS idx_news_published_at ON news(published_at)`);
 
   // Site settings table
   await db.run(`CREATE TABLE IF NOT EXISTS site_settings (
@@ -148,12 +151,29 @@ export async function initializeDatabase() {
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
-  // Seed default admin
-  const adminExists = await db.get(`SELECT id FROM users WHERE email = 'admin@plhut-magetan.go.id'`);
+  // Seed default admin (credentials sourced from environment; no hardcoded password)
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@plhut-magetan.go.id';
+  const adminExists = await db.get(`SELECT id FROM users WHERE email = ?`, [adminEmail]);
   if (!adminExists) {
-    const hash = await bcrypt.hash('Admin@PLHUT2025', 12);
+    let adminPassword = process.env.ADMIN_PASSWORD;
+    let generated = false;
+    if (!adminPassword || adminPassword.length < 12) {
+      if (adminPassword) {
+        console.warn('ADMIN_PASSWORD terlalu pendek (minimal 12 karakter). Membuat sandi acak sementara.');
+      }
+      adminPassword = crypto.randomBytes(12).toString('base64url');
+      generated = true;
+    }
+    const hash = await bcrypt.hash(adminPassword, 12);
     await db.run(`INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, 'admin')`,
-      ['Administrator PLHUT', 'admin@plhut-magetan.go.id', hash]);
+      ['Administrator PLHUT', adminEmail, hash]);
+    console.log(`Akun admin awal dibuat untuk email: ${adminEmail}`);
+    if (generated) {
+      console.warn('=== SANDI ADMIN AWAL (hanya ditampilkan sekali) ===');
+      console.warn(`    ${adminPassword}`);
+      console.warn('    Simpan segera dan WAJIB diganti setelah login pertama.');
+      console.warn('    Atau set ADMIN_PASSWORD di .env sebelum menjalankan server.');
+    }
   }
 
   // Seed default site settings

@@ -1,16 +1,17 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import { getDatabase } from '../models/database.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, optionalAuth } from '../middleware/auth.js';
 import { logActivity } from '../middleware/activityLogger.js';
 
 const router = express.Router();
 
 // GET /api/announcements (public - active only)
-router.get('/', async (req, res) => {
+router.get('/', optionalAuth, async (req, res) => {
   try {
     const db = await getDatabase();
     const { all } = req.query;
+    if (all === 'true' && !req.user) return res.status(403).json({ error: 'Akses ditolak.' });
     let query = `SELECT * FROM announcements`;
     const params = [];
     if (all !== 'true') {

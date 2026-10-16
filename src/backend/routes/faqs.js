@@ -1,15 +1,16 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import { getDatabase } from '../models/database.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, optionalAuth } from '../middleware/auth.js';
 import { logActivity } from '../middleware/activityLogger.js';
 
 const router = express.Router();
 
-router.get('/', async (req, res) => {
+router.get('/', optionalAuth, async (req, res) => {
   try {
     const db = await getDatabase();
     const { category, all } = req.query;
+    if (all === 'true' && !req.user) return res.status(403).json({ error: 'Akses ditolak.' });
     let query = `SELECT * FROM faqs WHERE 1=1`;
     const params = [];
     if (all !== 'true') { query += ` AND status = 'active'`; }

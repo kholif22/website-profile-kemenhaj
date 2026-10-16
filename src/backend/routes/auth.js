@@ -23,7 +23,7 @@ router.post('/login',
       if (!user) return res.status(401).json({ error: 'Email atau password salah.' });
       const valid = await bcrypt.compare(password, user.password_hash);
       if (!valid) return res.status(401).json({ error: 'Email atau password salah.' });
-      const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET || 'fallback_secret_change_in_production', { expiresIn: '8h' });
+      const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '8h' });
       res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
     } catch (err) {
       console.error(err);

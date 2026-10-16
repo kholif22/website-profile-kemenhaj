@@ -26,29 +26,4 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// GET /api/activity/stats (admin only — dashboard stats)
-router.get('/stats', authenticateToken, async (req, res) => {
-  try {
-    const db = await getDatabase();
-    const [newsCount, announcementCount, agendaCount, complaintCount, newComplaintCount, userCount] = await Promise.all([
-      db.get(`SELECT COUNT(*) as count FROM news WHERE status = 'published'`),
-      db.get(`SELECT COUNT(*) as count FROM announcements WHERE status = 'active'`),
-      db.get(`SELECT COUNT(*) as count FROM agendas WHERE status = 'upcoming'`),
-      db.get(`SELECT COUNT(*) as count FROM complaints`),
-      db.get(`SELECT COUNT(*) as count FROM complaints WHERE status = 'baru'`),
-      db.get(`SELECT COUNT(*) as count FROM users`),
-    ]);
-    res.json({
-      publishedNews: newsCount.count,
-      activeAnnouncements: announcementCount.count,
-      upcomingAgendas: agendaCount.count,
-      totalComplaints: complaintCount.count,
-      newComplaints: newComplaintCount.count,
-      totalUsers: userCount.count,
-    });
-  } catch (err) {
-    res.status(500).json({ error: 'Kesalahan server.' });
-  }
-});
-
 export default router;

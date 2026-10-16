@@ -11,7 +11,7 @@ const router = express.Router();
 router.get('/', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const db = await getDatabase();
-    const users = await db.all(`SELECT id, name, email, role, is_active, created_at FROM users ORDER BY created_at DESC`);
+    const users = await db.all(`SELECT id, name, username, email, role, is_active, created_at FROM users ORDER BY created_at DESC`);
     res.json(users);
   } catch (err) {
     res.status(500).json({ error: 'Kesalahan server.' });
@@ -23,6 +23,8 @@ router.post('/', authenticateToken, requireAdmin,
   [
     body('name').trim().notEmpty().withMessage('Nama wajib diisi.'),
     body('email').isEmail().withMessage('Format email tidak valid.'),
+    body('username').optional({ checkFalsy: true }).trim()
+      .matches(/^[a-zA-Z0-9._-]{3,30}$/).withMessage('Username 3-30 karakter (huruf, angka, titik, garis bawah, strip).'),
     body('password').isLength({ min: 8 }).withMessage('Password minimal 8 karakter.'),
     body('role').isIn(['admin', 'editor']).withMessage('Role tidak valid.'),
   ],
@@ -32,12 +34,17 @@ router.post('/', authenticateToken, requireAdmin,
     try {
       const db = await getDatabase();
       const { name, email, password, role } = req.body;
+      const username = req.body.username ? req.body.username.trim() : null;
       const exists = await db.get(`SELECT id FROM users WHERE email = ?`, [email]);
       if (exists) return res.status(409).json({ error: 'Email sudah terdaftar.' });
+      if (username) {
+        const dupUser = await db.get(`SELECT id FROM users WHERE username = ?`, [username]);
+        if (dupUser) return res.status(409).json({ error: 'Username sudah digunakan.' });
+      }
       const hash = await bcrypt.hash(password, 12);
       const result = await db.run(
-        `INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)`,
-        [name, email, hash, role]
+        `INSERT INTO users (name, username, email, password_hash, role) VALUES (?, ?, ?, ?, ?)`,
+        [name, username, email, hash, role]
       );
       await logActivity(req.user.id, req.user.name, `Menambahkan pengguna: ${name}`, 'user', result.lastID, name);
       res.status(201).json({ id: result.lastID, message: 'Pengguna berhasil ditambahkan.' });
@@ -52,6 +59,8 @@ router.put('/:id', authenticateToken, requireAdmin,
   [
     body('name').trim().notEmpty().withMessage('Nama wajib diisi.'),
     body('email').isEmail().withMessage('Format email tidak valid.'),
+    body('username').optional({ checkFalsy: true }).trim()
+      .matches(/^[a-zA-Z0-9._-]{3,30}$/).withMessage('Username 3-30 karakter (huruf, angka, titik, garis bawah, strip).'),
     body('role').isIn(['admin', 'editor']).withMessage('Role tidak valid.'),
   ],
   async (req, res) => {
@@ -60,17 +69,22 @@ router.put('/:id', authenticateToken, requireAdmin,
     try {
       const db = await getDatabase();
       const { name, email, password, role, is_active } = req.body;
+      const username = req.body.username ? req.body.username.trim() : null;
       const user = await db.get(`SELECT * FROM users WHERE id = ?`, [req.params.id]);
       if (!user) return res.status(404).json({ error: 'Pengguna tidak ditemukan.' });
       const dupEmail = await db.get(`SELECT id FROM users WHERE email = ? AND id != ?`, [email, req.params.id]);
       if (dupEmail) return res.status(409).json({ error: 'Email sudah digunakan pengguna lain.' });
+      if (username) {
+        const dupUser = await db.get(`SELECT id FROM users WHERE username = ? AND id != ?`, [username, req.params.id]);
+        if (dupUser) return res.status(409).json({ error: 'Username sudah digunakan pengguna lain.' });
+      }
       let passwordHash = user.password_hash;
       if (password && password.length >= 8) {
         passwordHash = await bcrypt.hash(password, 12);
       }
       await db.run(
-        `UPDATE users SET name=?, email=?, password_hash=?, role=?, is_active=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`,
-        [name, email, passwordHash, role, is_active !== undefined ? (is_active ? 1 : 0) : user.is_active, req.params.id]
+        `UPDATE users SET name=?, username=?, email=?, password_hash=?, role=?, is_active=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`,
+        [name, username, email, passwordHash, role, is_active !== undefined ? (is_active ? 1 : 0) : user.is_active, req.params.id]
       );
       await logActivity(req.user.id, req.user.name, `Mengubah pengguna: ${name}`, 'user', req.params.id, name);
       res.json({ message: 'Pengguna berhasil diperbarui.' });

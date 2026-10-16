@@ -16,6 +16,7 @@ export default function UserManagePage() {
   const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
+    username: '',
     email: '',
     password: '',
     role: 'editor',
@@ -47,6 +48,7 @@ export default function UserManagePage() {
     setEditingItem(null);
     setFormData({
       name: '',
+      username: '',
       email: '',
       password: '',
       role: 'editor',
@@ -59,6 +61,7 @@ export default function UserManagePage() {
     setEditingItem(item);
     setFormData({
       name: item.name,
+      username: item.username || '',
       email: item.email,
       password: '', // blank unless resetting
       role: item.role,
@@ -142,7 +145,7 @@ export default function UserManagePage() {
               <thead>
                 <tr>
                   <th>Nama Petugas</th>
-                  <th>Email Login</th>
+                  <th>Username / Email Login</th>
                   <th>Peran (Role)</th>
                   <th>Status Akun</th>
                   <th>Tanggal Terdaftar</th>
@@ -159,7 +162,10 @@ export default function UserManagePage() {
                       )}
                     </td>
                     <td className="text-xs font-mono text-gray-700">
-                      {item.email}
+                      {item.username && (
+                        <span className="block text-black font-semibold">{item.username}</span>
+                      )}
+                      <span className="text-gray-500">{item.email}</span>
                     </td>
                     <td>
                       <span className={`badge ${item.role === 'admin' ? 'badge-gold' : 'badge-info'} text-[11px] capitalize`}>
@@ -220,6 +226,18 @@ export default function UserManagePage() {
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             />
+          </div>
+
+          <div>
+            <label className="input-label">Username (opsional — dapat dipakai untuk login)</label>
+            <input
+              type="text"
+              className="input-field"
+              placeholder="Contoh: hajimagetan"
+              value={formData.username}
+              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+            />
+            <p className="text-[11px] text-gray-400 mt-1">3-30 karakter: huruf, angka, titik, garis bawah, atau strip.</p>
           </div>
 
           <div>

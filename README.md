@@ -146,7 +146,8 @@ ADMIN_PASSWORD=<ganti-dengan-sandi-kuat-minimal-12-karakter>
    MAX_FILE_SIZE=5242880
    # Opsional: kredensial admin awal (dipakai hanya saat seed pertama kali)
    ADMIN_EMAIL=admin@plhut-magetan.go.id
-   ADMIN_PASSWORD=<sandi-kuat-minimal-12-karakter>
+   ADMIN_USERNAME=
+   ADMIN_PASSWORD=<sandi-kuat-minimal-8-karakter>
    ```
 
    > Server akan **menolak start** bila `JWT_SECRET` kosong atau kurang dari 32 karakter.

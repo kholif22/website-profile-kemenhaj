@@ -25,7 +25,7 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email.trim() || !password.trim()) {
-      setError('Email dan kata sandi wajib diisi.');
+      setError('Email/username dan kata sandi wajib diisi.');
       return;
     }
     setError('');
@@ -36,7 +36,7 @@ export default function LoginPage() {
       toast.success('Login berhasil! Selamat datang.');
       navigate('/admin');
     } catch (err) {
-      const msg = err.response?.data?.error || err.response?.data?.errors?.[0]?.msg || 'Login gagal. Periksa email dan kata sandi.';
+      const msg = err.response?.data?.error || err.response?.data?.errors?.[0]?.msg || 'Login gagal. Periksa email/username dan kata sandi.';
       setError(msg);
       toast.error(msg);
     } finally {
@@ -72,14 +72,15 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-gray-300 mb-1.5">
-              Email Petugas / Admin
+              Email atau Username
             </label>
             <div className="relative">
               <input
-                type="email"
+                type="text"
+                autoComplete="username"
                 required
                 className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-3 pl-11 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
-                placeholder="admin@plhut-magetan.go.id"
+                placeholder="hajimagetan atau nama@plhut-magetan.go.id"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />

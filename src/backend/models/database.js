@@ -30,6 +30,7 @@ export async function initializeDatabase() {
   await db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
+    username TEXT UNIQUE,
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'editor' CHECK(role IN ('admin','editor')),
@@ -37,6 +38,14 @@ export async function initializeDatabase() {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
+
+  // Migration: database lama belum punya kolom `username`
+  const userColumns = await db.all(`PRAGMA table_info(users)`);
+  if (!userColumns.some((c) => c.name === 'username')) {
+    await db.run(`ALTER TABLE users ADD COLUMN username TEXT`);
+    console.log('Migrasi: kolom `username` ditambahkan ke tabel users.');
+  }
+  await db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username)`);
 
   // News table
   await db.run(`CREATE TABLE IF NOT EXISTS news (
@@ -153,21 +162,22 @@ export async function initializeDatabase() {
 
   // Seed default admin (credentials sourced from environment; no hardcoded password)
   const adminEmail = process.env.ADMIN_EMAIL || 'admin@plhut-magetan.go.id';
+  const adminUsername = process.env.ADMIN_USERNAME || null;
   const adminExists = await db.get(`SELECT id FROM users WHERE email = ?`, [adminEmail]);
   if (!adminExists) {
     let adminPassword = process.env.ADMIN_PASSWORD;
     let generated = false;
-    if (!adminPassword || adminPassword.length < 12) {
+    if (!adminPassword || adminPassword.length < 8) {
       if (adminPassword) {
-        console.warn('ADMIN_PASSWORD terlalu pendek (minimal 12 karakter). Membuat sandi acak sementara.');
+        console.warn('ADMIN_PASSWORD terlalu pendek (minimal 8 karakter). Membuat sandi acak sementara.');
       }
       adminPassword = crypto.randomBytes(12).toString('base64url');
       generated = true;
     }
     const hash = await bcrypt.hash(adminPassword, 12);
-    await db.run(`INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, 'admin')`,
-      ['Administrator PLHUT', adminEmail, hash]);
-    console.log(`Akun admin awal dibuat untuk email: ${adminEmail}`);
+    await db.run(`INSERT INTO users (name, username, email, password_hash, role) VALUES (?, ?, ?, ?, 'admin')`,
+      ['Administrator PLHUT', adminUsername, adminEmail, hash]);
+    console.log(`Akun admin awal dibuat (email: ${adminEmail}${adminUsername ? `, username: ${adminUsername}` : ''}).`);
     if (generated) {
       console.warn('=== SANDI ADMIN AWAL (hanya ditampilkan sekali) ===');
       console.warn(`    ${adminPassword}`);

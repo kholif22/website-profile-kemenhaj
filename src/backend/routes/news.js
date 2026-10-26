@@ -4,7 +4,9 @@ import { getDatabase } from '../models/database.js';
 import { authenticateToken, optionalAuth } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
 import { logActivity } from '../middleware/activityLogger.js';
-import { sanitizeHtml } from '../utils/sanitize.js';
+import { sanitizeHtml, formatNewsContent } from '../utils/sanitize.js';
+import { getPagination } from '../utils/pagination.js';
+import { removeUploadedFile } from '../utils/files.js';
 
 const router = express.Router();
 
@@ -16,7 +18,8 @@ const slugify = (text) => text.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replac
 router.get('/', optionalAuth, async (req, res) => {
   try {
     const db = await getDatabase();
-    const { category, search, page = 1, limit = 9 } = req.query;
+    const { category, search } = req.query;
+    const { page, limit, offset } = getPagination(req.query, { defaultLimit: 9, maxLimit: 50 });
     const status = req.user ? (req.query.status || 'published') : 'published';
     let query = `SELECT id, title, slug, excerpt, content, image, category, status, published_at, created_at FROM news WHERE 1=1`;
     const params = [];
@@ -30,10 +33,9 @@ router.get('/', optionalAuth, async (req, res) => {
     if (search) { countQuery += ` AND (title LIKE ? OR excerpt LIKE ?)`; countParams.push(`%${search}%`, `%${search}%`); }
     const totalRow = await db.get(countQuery, countParams);
     query += ` ORDER BY published_at DESC, created_at DESC LIMIT ? OFFSET ?`;
-    const offset = (parseInt(page) - 1) * parseInt(limit);
-    params.push(parseInt(limit), offset);
+    params.push(limit, offset);
     const news = await db.all(query, params);
-    res.json({ data: news, total: totalRow.total, page: parseInt(page), limit: parseInt(limit), totalPages: Math.ceil(totalRow.total / parseInt(limit)) });
+    res.json({ data: news, total: totalRow.total, page, limit, totalPages: Math.ceil(totalRow.total / limit) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Kesalahan server.' });
@@ -62,7 +64,10 @@ router.post('/', authenticateToken, upload.single('image'),
   ],
   async (req, res) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+    if (!errors.isEmpty()) {
+      if (req.file) await removeUploadedFile(req.file.filename);
+      return res.status(400).json({ errors: errors.array() });
+    }
     try {
       const db = await getDatabase();
       const { title, content, category, status, excerpt } = req.body;
@@ -73,7 +78,7 @@ router.post('/', authenticateToken, upload.single('image'),
       const published_at = status === 'published' ? new Date().toISOString() : null;
       const result = await db.run(
         `INSERT INTO news (title, slug, excerpt, content, image, category, status, published_at, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [title, slug, excerpt || '', sanitizeHtml(content), image, category, status, published_at, req.user.id]
+        [title, slug, excerpt || '', formatNewsContent(sanitizeHtml(content)), image, category, status, published_at, req.user.id]
       );
       await logActivity(req.user.id, req.user.name, `Menambahkan berita: ${title}`, 'news', result.lastID, title);
       res.status(201).json({ id: result.lastID, slug, message: 'Berita berhasil disimpan.' });
@@ -94,21 +99,29 @@ router.put('/:id', authenticateToken, upload.single('image'),
   ],
   async (req, res) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+    if (!errors.isEmpty()) {
+      if (req.file) await removeUploadedFile(req.file.filename);
+      return res.status(400).json({ errors: errors.array() });
+    }
     try {
       const db = await getDatabase();
       const existing = await db.get(`SELECT * FROM news WHERE id = ?`, [req.params.id]);
-      if (!existing) return res.status(404).json({ error: 'Berita tidak ditemukan.' });
+      if (!existing) {
+        if (req.file) await removeUploadedFile(req.file.filename);
+        return res.status(404).json({ error: 'Berita tidak ditemukan.' });
+      }
       const { title, content, category, status, excerpt } = req.body;
       const image = req.file ? `/uploads/${req.file.filename}` : existing.image;
       const published_at = status === 'published' ? (existing.published_at || new Date().toISOString()) : null;
       await db.run(
         `UPDATE news SET title=?, excerpt=?, content=?, image=?, category=?, status=?, published_at=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`,
-        [title, excerpt || '', sanitizeHtml(content), image, category, status, published_at, req.params.id]
+        [title, excerpt || '', formatNewsContent(sanitizeHtml(content)), image, category, status, published_at, req.params.id]
       );
+      if (req.file && existing.image) await removeUploadedFile(existing.image);
       await logActivity(req.user.id, req.user.name, `Mengubah berita: ${title}`, 'news', req.params.id, title);
       res.json({ message: 'Berita berhasil diperbarui.' });
     } catch (err) {
+      console.error(err);
       res.status(500).json({ error: 'Kesalahan server.' });
     }
   }
@@ -121,6 +134,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     const item = await db.get(`SELECT * FROM news WHERE id = ?`, [req.params.id]);
     if (!item) return res.status(404).json({ error: 'Berita tidak ditemukan.' });
     await db.run(`DELETE FROM news WHERE id = ?`, [req.params.id]);
+    await removeUploadedFile(item.image);
     await logActivity(req.user.id, req.user.name, `Menghapus berita: ${item.title}`, 'news', req.params.id, item.title);
     res.json({ message: 'Berita berhasil dihapus.' });
   } catch (err) {

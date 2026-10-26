@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 // Contexts (needed on every page → keep eager)
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { SiteSettingsProvider } from './hooks/useSiteSettings';
+import { useSEO } from './hooks/useSEO';
 
 // Fallback UI used by route-level Suspense boundaries
 import PageFallback from './components/PageFallback';
@@ -69,6 +70,12 @@ function RequireAdmin({ children }) {
 
 // 404 Not Found Component
 function NotFoundPage() {
+  useSEO({
+    title: 'Halaman Tidak Ditemukan',
+    description: 'Halaman yang Anda tuju tidak tersedia.',
+    noIndex: true,
+  });
+
   return (
     <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center">
       <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 text-black font-black text-2xl" style={{ background: 'var(--color-gold)' }}>
@@ -149,6 +156,7 @@ export default function App() {
                 <Route path="aktivitas" element={<ActivityLogPage />} />
                 <Route path="pengguna" element={<RequireAdmin><UserManagePage /></RequireAdmin>} />
                 <Route path="pengaturan" element={<RequireAdmin><SiteSettingsPage /></RequireAdmin>} />
+                <Route path="*" element={<NotFoundPage />} />
               </Route>
             </Routes>
           </Suspense>

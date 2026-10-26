@@ -3,25 +3,54 @@ import { authAPI } from '../services/api';
 
 const AuthContext = createContext(null);
 
+function readStoredUser() {
+  try {
+    const stored = localStorage.getItem('user');
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(readStoredUser);
   const [loading, setLoading] = useState(true);
 
+  // Validasi token ke server saat aplikasi dimuat. Data dari localStorage hanya
+  // dipakai sebagai tampilan awal; jika token kedaluwarsa/dicabut, sesi dibersihkan.
   useEffect(() => {
     const token = localStorage.getItem('token');
-    const stored = localStorage.getItem('user');
-    if (token && stored) {
-      try {
-        setUser(JSON.parse(stored));
-      } catch {
-        logout();
-      }
+    if (!token) {
+      localStorage.removeItem('user');
+      setUser(null);
+      setLoading(false);
+      return undefined;
     }
-    setLoading(false);
+
+    let active = true;
+    authAPI.me()
+      .then((res) => {
+        if (!active) return;
+        const freshUser = res.data.user;
+        localStorage.setItem('user', JSON.stringify(freshUser));
+        setUser(freshUser);
+      })
+      .catch(() => {
+        if (!active) return;
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => { active = false; };
   }, []);
 
   const login = async (identifier, password) => {
-    const res = await authAPI.login({ identifier, password });
+    // Trim hanya identifier: spasi di awal/akhir sering ikut ter-paste.
+    const res = await authAPI.login({ identifier: String(identifier ?? '').trim(), password });
     const { token, user } = res.data;
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(user));

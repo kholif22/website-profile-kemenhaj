@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 export function Accordion({ items }) {
@@ -56,11 +56,49 @@ export function EmptyState({ icon: Icon, title = 'Tidak ada data', description =
 }
 
 export function Modal({ isOpen, onClose, title, children, size = 'md' }) {
+  const panelRef = useRef(null);
+  const onCloseRef = useRef(onClose);
+
+  // Simpan callback terbaru tanpa memicu ulang efek (mencegah fokus berpindah
+  // dari input ke panel setiap kali form di dalam modal berubah).
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const handleKey = (e) => {
+      if (e.key === 'Escape') onCloseRef.current();
+    };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', handleKey);
+    panelRef.current?.focus();
+
+    return () => {
+      document.removeEventListener('keydown', handleKey);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
   const sizes = { sm: 'max-w-md', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl' };
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
-      <div className={`w-full ${sizes[size]} bg-white rounded-2xl shadow-2xl max-h-[90vh] flex flex-col`} onClick={e => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        ref={panelRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className={`w-full ${sizes[size]} bg-white rounded-2xl shadow-2xl max-h-[90vh] flex flex-col`}
+        onClick={e => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: 'var(--color-border)' }}>
           <h3 className="font-bold text-base" style={{ color: 'var(--color-black)' }}>{title}</h3>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors" aria-label="Tutup">
@@ -76,10 +114,35 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }) {
 }
 
 export function ConfirmModal({ isOpen, onConfirm, onCancel, title = 'Konfirmasi', message, confirmText = 'Ya, Hapus', cancelText = 'Batal', variant = 'danger' }) {
+  const onCancelRef = useRef(onCancel);
+
+  useEffect(() => {
+    onCancelRef.current = onCancel;
+  }, [onCancel]);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const handleKey = (e) => {
+      if (e.key === 'Escape') onCancelRef.current();
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [isOpen]);
+
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
-      <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.5)' }}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+    >
+      <div
+        role="alertdialog"
+        aria-modal="true"
+        aria-label={title}
+        className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6"
+      >
         <div className="text-center mb-5">
           <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3" style={{ background: variant === 'danger' ? '#fef2f2' : '#fffbeb' }}>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={variant === 'danger' ? '#dc2626' : '#d97706'} strokeWidth="2"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>

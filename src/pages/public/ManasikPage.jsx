@@ -1,23 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { agendasAPI } from '../../services/api';
-import { useSiteSettings } from '../../hooks/useSiteSettings';
+import { useSEO } from '../../hooks/useSEO';
 import { PageHeader, SectionHeader, LoadingSpinner, EmptyState, Modal, Badge } from '../../components/ui/index';
 import { formatDate, agendaStatusLabel, agendaStatusClass } from '../../utils/helpers';
 import { Calendar, Clock, MapPin, BookOpen, Search, Filter, Info } from 'lucide-react';
 
 export default function ManasikPage() {
-  const { settings } = useSiteSettings();
+  useSEO({
+    title: 'Informasi & Jadwal Manasik',
+    description: 'Jadwal bimbingan manasik haji tingkat kabupaten dan kecamatan di Kabupaten Magetan.',
+    url: '/manasik',
+  });
   const [agendas, setAgendas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedAgenda, setSelectedAgenda] = useState(null);
 
   useEffect(() => {
-    document.title = `Informasi Manasik - ${settings.site_short_name || 'PLHUT Magetan'}`;
     window.scrollTo(0, 0);
 
     fetchAgendas();
-  }, [settings.site_short_name]);
+  }, []);
 
   const fetchAgendas = (status = statusFilter) => {
     setLoading(true);

@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { newsAPI, agendasAPI, announcementsAPI, faqsAPI } from '../../services/api';
 import { useSiteSettings } from '../../hooks/useSiteSettings';
+import { useSEO } from '../../hooks/useSEO';
 import { formatDate, truncate, agendaStatusLabel, agendaStatusClass, stripHtml } from '../../utils/helpers';
 import { SectionHeader, LoadingSpinner, EmptyState, Accordion, Badge } from '../../components/ui/index';
-import { ArrowRight, BookOpen, Calendar, Info, MessageSquare, Star, ChevronRight, Phone, Mail, MapPin, Newspaper, HelpCircle } from 'lucide-react';
+import { ArrowRight, BookOpen, Calendar, Info, MessageSquare, Star, ChevronRight, Phone, Mail, MapPin, Newspaper, HelpCircle, Megaphone } from 'lucide-react';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
@@ -152,6 +153,61 @@ function WelcomeSection({ settings }) {
   );
 }
 
+function AnnouncementsSection({ announcements, loading }) {
+  if (loading || announcements.length === 0) return null;
+
+  return (
+    <section
+      className="py-10"
+      style={{
+        background: 'linear-gradient(135deg, rgba(212,175,55,0.12), rgba(245,197,66,0.06))',
+        borderTop: '1px solid var(--color-border)',
+        borderBottom: '1px solid var(--color-border)',
+      }}
+    >
+      <div className="container mx-auto px-4">
+        <div className="flex flex-wrap items-end justify-between gap-3 mb-6">
+          <div>
+            <div className="inline-flex items-center gap-2 mb-1 text-xs font-semibold" style={{ color: 'var(--color-gold-dark)' }}>
+              <Megaphone size={15} /> Pengumuman Resmi
+            </div>
+            <h2 className="text-xl md:text-2xl font-bold" style={{ color: 'var(--color-black)' }}>Informasi Penting</h2>
+          </div>
+          <Link
+            to="/berita?tab=pengumuman"
+            className="inline-flex items-center gap-1 text-xs md:text-sm font-semibold"
+            style={{ color: 'var(--color-gold-dark)' }}
+          >
+            Lihat Semua <ArrowRight size={14} />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {announcements.map((ann) => (
+            <Link
+              key={ann.id}
+              to="/berita?tab=pengumuman"
+              className="card p-5 border-l-4 hover:-translate-y-0.5 transition-transform"
+              style={{ borderLeftColor: 'var(--color-gold)' }}
+            >
+              <div className="flex items-center justify-between gap-3 mb-2">
+                <span className="badge badge-warning text-[11px]">Penting</span>
+                <span className="text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>
+                  {formatDate(ann.created_at)}
+                </span>
+              </div>
+              <h3 className="font-bold text-sm mb-1" style={{ color: 'var(--color-black)' }}>{ann.title}</h3>
+              <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+                {truncate(stripHtml(ann.content), 140)}
+              </p>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function LatestNews({ news, loading }) {
   return (
     <section className="py-16" style={{ background: 'var(--color-bg)' }}>
@@ -172,7 +228,7 @@ function LatestNews({ news, loading }) {
                   <Link to={`/berita/${item.slug}`} className="card block overflow-hidden hover:-translate-y-1 transition-all duration-300 h-full group">
                     <div className="h-44 overflow-hidden" style={{ background: 'var(--color-bg)' }}>
                       {item.image ? (
-                        <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        <img src={item.image} alt={item.title} loading="lazy" decoding="async" className="w-full h-full object-contain" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.1) 0%, rgba(245,197,66,0.1) 100%)' }}>
                           <BookOpen size={40} style={{ color: 'var(--color-gold)', opacity: 0.4 }} />
@@ -291,14 +347,18 @@ function CTASection() {
 
 export default function HomePage() {
   const { settings } = useSiteSettings();
+  useSEO({
+    title: `${settings.site_short_name || 'PLHUT Magetan'} - Pusat Layanan Haji dan Umrah`,
+    description: settings.site_description,
+    url: '/',
+  });
   const [news, setNews] = useState([]);
   const [agendas, setAgendas] = useState([]);
   const [faqs, setFaqs] = useState([]);
-  const [loading, setLoading] = useState({ news: true, agendas: true, faqs: true });
+  const [announcements, setAnnouncements] = useState([]);
+  const [loading, setLoading] = useState({ news: true, agendas: true, faqs: true, announcements: true });
 
   useEffect(() => {
-    document.title = `${settings.site_short_name || 'PLHUT Magetan'} - Pusat Layanan Haji dan Umrah`;
-
     newsAPI.getAll({ status: 'published', limit: 3 })
       .then(r => setNews(r.data.data || []))
       .catch(() => setNews([]))
@@ -313,6 +373,11 @@ export default function HomePage() {
       .then(r => setFaqs((r.data || []).slice(0, 6)))
       .catch(() => setFaqs([]))
       .finally(() => setLoading(p => ({ ...p, faqs: false })));
+
+    announcementsAPI.getAll({ home: 'true' })
+      .then(r => setAnnouncements((r.data || []).slice(0, 2)))
+      .catch(() => setAnnouncements([]))
+      .finally(() => setLoading(p => ({ ...p, announcements: false })));
   }, [settings.site_short_name]);
 
   return (
@@ -320,6 +385,7 @@ export default function HomePage() {
       <HeroSection settings={settings} />
       <ServiceCards />
       <WelcomeSection settings={settings} />
+      <AnnouncementsSection announcements={announcements} loading={loading.announcements} />
       <LatestNews news={news} loading={loading.news} />
       <UpcomingAgendas agendas={agendas} loading={loading.agendas} />
       <FAQSection faqs={faqs} loading={loading.faqs} />

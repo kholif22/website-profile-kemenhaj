@@ -14,7 +14,7 @@ export const authenticateToken = async (req, res, next) => {
     req.user = user;
     next();
   } catch {
-    return res.status(403).json({ error: 'Token tidak valid atau telah kedaluwarsa.' });
+    return res.status(401).json({ error: 'Token tidak valid atau telah kedaluwarsa.' });
   }
 };
 

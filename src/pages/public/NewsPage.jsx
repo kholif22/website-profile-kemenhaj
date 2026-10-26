@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { newsAPI, announcementsAPI } from '../../services/api';
-import { useSiteSettings } from '../../hooks/useSiteSettings';
+import { useSEO } from '../../hooks/useSEO';
 import { PageHeader, SectionHeader, LoadingSpinner, EmptyState, Pagination, Badge } from '../../components/ui/index';
 import { formatDate, truncate, stripHtml, categoryClass } from '../../utils/helpers';
 import { Search, Filter, Newspaper, Megaphone, Calendar, ArrowRight } from 'lucide-react';
@@ -17,8 +17,13 @@ const CATEGORIES = [
 ];
 
 export default function NewsPage() {
-  const { settings } = useSiteSettings();
-  const [activeTab, setActiveTab] = useState('news'); // 'news' or 'announcements'
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Tab aktif disimpan di URL (?tab=pengumuman) agar bisa ditautkan langsung,
+  // termasuk dari kartu pengumuman di beranda.
+  const activeTab = searchParams.get('tab') === 'pengumuman' ? 'announcements' : 'news';
+  const setActiveTab = (tab) => {
+    setSearchParams(tab === 'announcements' ? { tab: 'pengumuman' } : {});
+  };
   const [newsList, setNewsList] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,10 +32,15 @@ export default function NewsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  useSEO({
+    title: activeTab === 'announcements' ? 'Pengumuman Resmi' : 'Berita & Pengumuman',
+    description: 'Berita kegiatan, informasi pelayanan, dan pengumuman resmi PLHUT Kabupaten Magetan.',
+    url: '/berita',
+  });
+
   useEffect(() => {
-    document.title = `Berita & Pengumuman - ${settings.site_short_name || 'PLHUT Magetan'}`;
     window.scrollTo(0, 0);
-  }, [settings.site_short_name]);
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'news') {
@@ -163,7 +173,9 @@ export default function NewsPage() {
                             <img
                               src={item.image}
                               alt={item.title}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              loading="lazy"
+                              decoding="async"
+                              className="w-full h-full object-contain"
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center bg-stone-100 text-yellow-600">

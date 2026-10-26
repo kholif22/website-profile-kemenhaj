@@ -22,10 +22,12 @@ router.get('/', optionalAuth, async (req, res) => {
   }
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', optionalAuth, async (req, res) => {
   try {
     const db = await getDatabase();
-    const item = await db.get(`SELECT * FROM services WHERE id = ?`, [req.params.id]);
+    let query = `SELECT * FROM services WHERE id = ?`;
+    if (!req.user) query += ` AND status = 'active'`;
+    const item = await db.get(query, [req.params.id]);
     if (!item) return res.status(404).json({ error: 'Layanan tidak ditemukan.' });
     res.json(item);
   } catch (err) {
@@ -34,7 +36,11 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/', authenticateToken,
-  [body('title').trim().notEmpty(), body('category').isIn(['haji','umrah','manasik','informasi'])],
+  [
+    body('title').trim().notEmpty(),
+    body('category').isIn(['haji', 'umrah', 'manasik', 'informasi']),
+    body('status').optional().isIn(['active', 'inactive']),
+  ],
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
@@ -54,16 +60,23 @@ router.post('/', authenticateToken,
 );
 
 router.put('/:id', authenticateToken,
-  [body('title').trim().notEmpty()],
+  [
+    body('title').trim().notEmpty(),
+    body('category').isIn(['haji', 'umrah', 'manasik', 'informasi']),
+    body('status').optional().isIn(['active', 'inactive']),
+  ],
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
     try {
       const db = await getDatabase();
+      const existing = await db.get(`SELECT status FROM services WHERE id = ?`, [req.params.id]);
+      if (!existing) return res.status(404).json({ error: 'Layanan tidak ditemukan.' });
       const { title, category, description, requirements, procedure, official_url, status } = req.body;
+      const finalStatus = status || existing.status;
       await db.run(
         `UPDATE services SET title=?, category=?, description=?, requirements=?, procedure=?, official_url=?, status=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`,
-        [title, category, description || '', requirements || '', procedure || '', official_url || '', status, req.params.id]
+        [title, category, description || '', requirements || '', procedure || '', official_url || '', finalStatus, req.params.id]
       );
       await logActivity(req.user.id, req.user.name, `Mengubah layanan: ${title}`, 'service', req.params.id, title);
       res.json({ message: 'Layanan berhasil diperbarui.' });

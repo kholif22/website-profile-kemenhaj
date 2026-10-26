@@ -42,6 +42,36 @@ export const stripHtml = (html) => {
   return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 };
 
+// Apakah konten berupa teks biasa (tanpa tag HTML sama sekali)?
+const HAS_HTML_TAG = /<[a-z][\s\S]*>/i;
+
+export const isPlainTextContent = (content) => {
+  if (!content) return false;
+  return !HAS_HTML_TAG.test(String(content));
+};
+
+// Ubah teks biasa dari textarea menjadi paragraf HTML agar baris baru
+// (Enter) tetap tampil. Satu Enter = baris baru, dua Enter = paragraf baru.
+// Konten yang sudah berisi HTML dibiarkan apa adanya.
+export const formatNewsContent = (content) => {
+  if (!content) return '';
+  const text = String(content).replace(/\r\n?/g, '\n').trim();
+  if (!text) return '';
+  if (!isPlainTextContent(text)) return text;
+
+  const escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+  return escaped
+    .split(/\n{2,}/)
+    .map((paragraph) => `<p>${paragraph.replace(/\n/g, '<br />')}</p>`)
+    .join('');
+};
+
 // Status complaint labels
 export const complaintStatusLabel = {
   baru: 'Baru',

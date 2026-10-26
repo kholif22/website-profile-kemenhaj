@@ -1,12 +1,14 @@
 import React, { useState, Suspense } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { usersAPI } from '../services/api';
+import { Modal } from '../components/ui/index';
 import PageFallback from '../components/PageFallback';
 import toast from 'react-hot-toast';
 import {
   LayoutDashboard, Newspaper, Megaphone, CalendarDays, BookOpen,
   HelpCircle, MessageSquare, Users, Settings, Activity,
-  LogOut, Menu, X, ChevronRight, Bell, User
+  LogOut, Menu, X, ChevronRight, Bell, User, KeyRound
 } from 'lucide-react';
 
 const menuItems = [
@@ -29,6 +31,37 @@ export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebar, setMobileSidebar] = useState(false);
 
+  // Ganti kata sandi akun yang sedang login
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ current_password: '', new_password: '', confirm: '' });
+  const [savingPassword, setSavingPassword] = useState(false);
+
+  const closePasswordModal = () => {
+    setPasswordOpen(false);
+    setPasswordForm({ current_password: '', new_password: '', confirm: '' });
+  };
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    if (!passwordForm.current_password) return toast.error('Kata sandi saat ini wajib diisi.');
+    if (passwordForm.new_password.length < 8) return toast.error('Kata sandi baru minimal 8 karakter.');
+    if (passwordForm.new_password !== passwordForm.confirm) return toast.error('Konfirmasi kata sandi baru tidak cocok.');
+
+    setSavingPassword(true);
+    try {
+      await usersAPI.changePassword({
+        current_password: passwordForm.current_password,
+        new_password: passwordForm.new_password,
+      });
+      toast.success('Kata sandi berhasil diperbarui.');
+      closePasswordModal();
+    } catch (err) {
+      toast.error(err.response?.data?.error || err.response?.data?.errors?.[0]?.msg || 'Gagal memperbarui kata sandi.');
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
   const visibleMenuItems = menuItems.filter((item) => !item.adminOnly || user?.role === 'admin');
 
   const handleLogout = () => {
@@ -40,11 +73,13 @@ export default function AdminLayout() {
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="p-5 border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+      <div className="px-3 py-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
         <Link to="/admin" className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm flex-shrink-0" style={{ background: 'var(--color-gold)', color: 'var(--color-black)' }}>
-            PL
-          </div>
+          <img
+            src="/logo-kemenhaj.png"
+            alt="Logo Kementerian Haji dan Umrah Republik Indonesia"
+            className="w-10 h-10 object-contain flex-shrink-0"
+          />
           {(sidebarOpen || mobileSidebar) && (
             <div>
               <div className="text-white font-bold text-sm leading-tight">PLHUT Admin</div>
@@ -84,6 +119,14 @@ export default function AdminLayout() {
             </div>
           </div>
         )}
+        <button
+          onClick={() => setPasswordOpen(true)}
+          className="sidebar-link w-full mb-1"
+          title={!sidebarOpen && !mobileSidebar ? 'Ganti Kata Sandi' : undefined}
+        >
+          <KeyRound size={18} className="flex-shrink-0" />
+          {(sidebarOpen || mobileSidebar) && <span>Ganti Kata Sandi</span>}
+        </button>
         <button
           onClick={handleLogout}
           className="sidebar-link w-full"
@@ -172,6 +215,65 @@ export default function AdminLayout() {
           </div>
         </main>
       </div>
+
+      <Modal
+        isOpen={passwordOpen}
+        onClose={closePasswordModal}
+        title="Ganti Kata Sandi"
+        size="sm"
+      >
+        <form onSubmit={handlePasswordSubmit} className="space-y-4">
+          <p className="text-xs text-gray-500 leading-relaxed">
+            Gunakan kata sandi yang kuat dan tidak dipakai di layanan lain. Minimal 8 karakter.
+          </p>
+          <div>
+            <label className="input-label" htmlFor="current-password">Kata Sandi Saat Ini *</label>
+            <input
+              id="current-password"
+              type="password"
+              required
+              autoComplete="current-password"
+              className="input-field"
+              value={passwordForm.current_password}
+              onChange={(e) => setPasswordForm({ ...passwordForm, current_password: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="input-label" htmlFor="new-password">Kata Sandi Baru *</label>
+            <input
+              id="new-password"
+              type="password"
+              required
+              minLength={8}
+              autoComplete="new-password"
+              className="input-field"
+              value={passwordForm.new_password}
+              onChange={(e) => setPasswordForm({ ...passwordForm, new_password: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="input-label" htmlFor="confirm-password">Ulangi Kata Sandi Baru *</label>
+            <input
+              id="confirm-password"
+              type="password"
+              required
+              minLength={8}
+              autoComplete="new-password"
+              className="input-field"
+              value={passwordForm.confirm}
+              onChange={(e) => setPasswordForm({ ...passwordForm, confirm: e.target.value })}
+            />
+          </div>
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+            <button type="button" onClick={closePasswordModal} className="btn-secondary text-xs py-2 px-4">
+              Batal
+            </button>
+            <button type="submit" disabled={savingPassword} className="btn-primary text-xs py-2 px-5">
+              {savingPassword ? 'Menyimpan...' : 'Simpan Kata Sandi'}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

@@ -21,9 +21,11 @@ router.get('/', authenticateToken, async (req, res) => {
        FROM news 
        WHERE published_at IS NOT NULL 
        GROUP BY month 
-       ORDER BY month ASC 
+       ORDER BY month DESC
        LIMIT 6`
     );
+    // Query mengambil 6 bulan terbaru (DESC); balikkan agar grafik tampil kronologis.
+    monthlyNews.reverse();
 
     const complaintByStatus = await db.all(
       `SELECT status, COUNT(*) as count FROM complaints GROUP BY status`

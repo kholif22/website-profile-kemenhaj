@@ -36,9 +36,25 @@ export default function LoginPage() {
       toast.success('Login berhasil! Selamat datang.');
       navigate('/admin');
     } catch (err) {
-      const msg = err.response?.data?.error || err.response?.data?.errors?.[0]?.msg || 'Login gagal. Periksa email/username dan kata sandi.';
+      // Pesan dibedakan agar tidak menyesatkan: gangguan koneksi/backend bukan
+      // berarti kredensial salah.
+      let msg;
+      if (!err.response) {
+        msg = 'Tidak dapat terhubung ke server. Pastikan backend sudah berjalan (npm start) lalu coba lagi.';
+      } else if (err.response.status === 401) {
+        msg = err.response.data?.error || 'Email/username atau kata sandi salah.';
+      } else if (err.response.status === 429) {
+        msg = err.response.data?.error || 'Terlalu banyak percobaan login. Coba lagi setelah 15 menit.';
+      } else if (err.response.status >= 500) {
+        msg = err.response.data?.error || `Server bermasalah (HTTP ${err.response.status}). Coba lagi.`;
+      } else {
+        msg = err.response.data?.error
+          || err.response.data?.errors?.[0]?.msg
+          || `Login gagal (HTTP ${err.response.status}).`;
+      }
       setError(msg);
       toast.error(msg);
+      if (import.meta.env.DEV) console.error('Login error:', err);
     } finally {
       setLoading(false);
     }
@@ -78,6 +94,9 @@ export default function LoginPage() {
               <input
                 type="text"
                 autoComplete="username"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 required
                 className="w-full bg-stone-900 border border-stone-800 rounded-xl px-4 py-3 pl-11 text-xs text-white placeholder-gray-500 focus:outline-hidden focus:border-yellow-500 transition-colors"
                 placeholder="hajimagetan atau nama@plhut-magetan.go.id"

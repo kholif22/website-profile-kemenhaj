@@ -34,7 +34,19 @@ export default function NewsManagePage() {
     status: 'published',
   });
   const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [saving, setSaving] = useState(false);
+
+  // Pratinjau gambar yang dipilih (ditampilkan utuh, tidak terpotong).
+  useEffect(() => {
+    if (!imageFile) {
+      setImagePreview(null);
+      return undefined;
+    }
+    const url = URL.createObjectURL(imageFile);
+    setImagePreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [imageFile]);
 
   // Delete Confirm State
   const [deleteId, setDeleteId] = useState(null);
@@ -241,7 +253,7 @@ export default function NewsManagePage() {
                   <tr key={item.id}>
                     <td>
                       {item.image ? (
-                        <img src={item.image} alt={item.title} className="w-12 h-10 object-cover rounded-lg" />
+                        <img src={item.image} alt={item.title} loading="lazy" decoding="async" className="w-12 h-10 object-contain bg-stone-100 rounded-lg" />
                       ) : (
                         <div className="w-12 h-10 rounded-lg bg-stone-100 flex items-center justify-center text-gray-400">
                           <ImageIcon size={18} />
@@ -346,8 +358,17 @@ export default function NewsManagePage() {
               type="file"
               accept="image/*"
               className="input-field text-xs"
-              onChange={(e) => setImageFile(e.target.files[0])}
+              onChange={(e) => setImageFile(e.target.files[0] || null)}
             />
+            {(imagePreview || editingItem?.image) && (
+              <div className="mt-2 rounded-xl border border-gray-200 bg-stone-100 overflow-hidden flex items-center justify-center">
+                <img
+                  src={imagePreview || editingItem.image}
+                  alt="Pratinjau thumbnail"
+                  className="w-full max-h-48 object-contain"
+                />
+              </div>
+            )}
             {editingItem?.image && !imageFile && (
               <p className="text-[11px] text-gray-400 mt-1">
                 Gambar tersimpan: <span className="font-mono">{editingItem.image}</span>
@@ -376,6 +397,9 @@ export default function NewsManagePage() {
               value={formData.content}
               onChange={(e) => setFormData({ ...formData, content: e.target.value })}
             />
+            <p className="text-[11px] text-gray-400 mt-1">
+              Tekan Enter untuk baris baru, dan Enter dua kali untuk memisahkan paragraf.
+            </p>
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">

@@ -9,4 +9,5 @@ uploads/*.webp
 database/*.db
 database/*.db-shm
 database/*.db-wal
+backups/
 *.log

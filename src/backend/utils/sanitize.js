@@ -43,4 +43,29 @@ export function sanitizeHtml(input) {
   return html;
 }
 
+// Deteksi konten yang sudah memakai tag HTML.
+const HAS_HTML_TAG = /<[a-z][\s\S]*>/i;
+
+// Normalisasi konten berita: teks biasa (tanpa tag HTML) diubah menjadi
+// paragraf, sehingga Enter yang diketik admin tidak hilang saat dirender.
+// Konten yang sudah berisi HTML dibiarkan apa adanya.
+export function formatNewsContent(content) {
+  if (!content || typeof content !== 'string') return '';
+  const text = content.replace(/\r\n?/g, '\n').trim();
+  if (!text) return '';
+  if (HAS_HTML_TAG.test(text)) return text;
+
+  const escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+  return escaped
+    .split(/\n{2,}/)
+    .map((paragraph) => `<p>${paragraph.replace(/\n/g, '<br />')}</p>`)
+    .join('');
+}
+
 export default sanitizeHtml;

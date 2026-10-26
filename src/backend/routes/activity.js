@@ -1,6 +1,7 @@
 import express from 'express';
 import { getDatabase } from '../models/database.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { getPagination } from '../utils/pagination.js';
 
 const router = express.Router();
 
@@ -8,18 +9,17 @@ const router = express.Router();
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const db = await getDatabase();
-    const { limit = 50, page = 1 } = req.query;
-    const offset = (parseInt(page) - 1) * parseInt(limit);
+    const { page, limit, offset } = getPagination(req.query, { defaultLimit: 50, maxLimit: 200 });
     const totalRow = await db.get(`SELECT COUNT(*) as total FROM activity_logs`);
     const logs = await db.all(
       `SELECT * FROM activity_logs ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-      [parseInt(limit), offset]
+      [limit, offset]
     );
     res.json({
       data: logs,
       total: totalRow.total,
-      page: parseInt(page),
-      totalPages: Math.ceil(totalRow.total / parseInt(limit)),
+      page,
+      totalPages: Math.ceil(totalRow.total / limit),
     });
   } catch (err) {
     res.status(500).json({ error: 'Kesalahan server.' });

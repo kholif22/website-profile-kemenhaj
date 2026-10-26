@@ -58,7 +58,7 @@ export async function initializeDatabase() {
     category TEXT NOT NULL DEFAULT 'Berita Instansi',
     status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','published')),
     published_at DATETIME,
-    created_by INTEGER REFERENCES users(id),
+    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
@@ -94,6 +94,20 @@ export async function initializeDatabase() {
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
   await db.run(`CREATE INDEX IF NOT EXISTS idx_agendas_date ON agendas(event_date)`);
+
+  // Staff / employees table (profil pegawai & karyawan)
+  await db.run(`CREATE TABLE IF NOT EXISTS staff (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    position TEXT NOT NULL,
+    unit TEXT,
+    photo TEXT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','inactive')),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+  await db.run(`CREATE INDEX IF NOT EXISTS idx_staff_order ON staff(sort_order, id)`);
 
   // Services table
   await db.run(`CREATE TABLE IF NOT EXISTS services (
@@ -137,11 +151,12 @@ export async function initializeDatabase() {
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
   await db.run(`CREATE INDEX IF NOT EXISTS idx_complaints_status ON complaints(status)`);
+  await db.run(`CREATE INDEX IF NOT EXISTS idx_complaints_created_at ON complaints(created_at)`);
 
   // Activity logs table
   await db.run(`CREATE TABLE IF NOT EXISTS activity_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER REFERENCES users(id),
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
     user_name TEXT,
     action TEXT NOT NULL,
     entity_type TEXT,
@@ -163,7 +178,10 @@ export async function initializeDatabase() {
   // Seed default admin (credentials sourced from environment; no hardcoded password)
   const adminEmail = process.env.ADMIN_EMAIL || 'admin@plhut-magetan.go.id';
   const adminUsername = process.env.ADMIN_USERNAME || null;
-  const adminExists = await db.get(`SELECT id FROM users WHERE email = ?`, [adminEmail]);
+  const adminExists = await db.get(
+    `SELECT id, username, password_hash FROM users WHERE email = ? COLLATE NOCASE`,
+    [adminEmail]
+  );
   if (!adminExists) {
     let adminPassword = process.env.ADMIN_PASSWORD;
     let generated = false;
@@ -184,6 +202,28 @@ export async function initializeDatabase() {
       console.warn('    Simpan segera dan WAJIB diganti setelah login pertama.');
       console.warn('    Atau set ADMIN_PASSWORD di .env sebelum menjalankan server.');
     }
+  } else {
+    // Akun admin hanya di-seed SEKALI. Mengubah ADMIN_* di .env setelah akun ada
+    // tidak otomatis mengubah akun tersebut — sumber kebingungan "kredensial awal
+    // tidak bisa dipakai". Bantu dengan melengkapi username yang masih kosong dan
+    // memberi peringatan bila ADMIN_PASSWORD di .env tidak cocok.
+    if (adminUsername && !adminExists.username) {
+      try {
+        await db.run(`UPDATE users SET username = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+          [adminUsername, adminExists.id]);
+        console.log(`Username admin dilengkapi dari .env: ${adminUsername}`);
+      } catch {
+        console.warn(`ADMIN_USERNAME "${adminUsername}" tidak dapat dipakai (mungkin sudah digunakan akun lain).`);
+      }
+    }
+    if (process.env.ADMIN_PASSWORD) {
+      const envMatches = await bcrypt.compare(process.env.ADMIN_PASSWORD, adminExists.password_hash);
+      if (!envMatches) {
+        console.warn('Catatan: ADMIN_PASSWORD di .env tidak sama dengan sandi akun admin yang tersimpan.');
+        console.warn('  Seed hanya berjalan saat akun belum ada. Untuk menyamakan, jalankan: npm run admin:setup');
+        console.warn('  (Abaikan bila sandi memang sudah diganti melalui dashboard.)');
+      }
+    }
   }
 
   // Seed default site settings
@@ -200,6 +240,14 @@ export async function initializeDatabase() {
     ['site_welcome_name', '[Nama Pimpinan — akan diisi setelah verifikasi]'],
     ['site_welcome_title', '[Jabatan Pimpinan — akan diisi setelah verifikasi]'],
     ['site_welcome_text', 'Selamat datang di website resmi Pusat Layanan Haji dan Umrah Terpadu Kabupaten Magetan. Website ini hadir untuk memberikan kemudahan akses informasi pelayanan haji dan umrah bagi masyarakat Kabupaten Magetan.'],
+    ['site_welcome_photo', ''],
+    ['profile_history', 'Pusat Layanan Haji dan Umrah Terpadu (PLHUT) Kabupaten Magetan didirikan sebagai wujud komitmen Kementerian Agama dalam menghadirkan pelayanan publik yang terintegrasi, transparan, akuntabel, dan nyaman bagi seluruh calon jemaah haji dan umrah.\n\nKeberadaan gedung PLHUT di Kabupaten Magetan mempertemukan seluruh proses administrasi pelayanan haji dalam satu atap, mulai dari pendaftaran setoran awal di Bank Penerima Setoran (BPS BPIH), verifikasi berkas, pemindaian biometrik (foto dan sidik jari), hingga penerimaan Surat Pendaftaran Pergi Haji (SPPH).\n\nDengan mengedepankan prinsip pelayanan prima dan nilai-nilai keislaman, PLHUT siap melayani masyarakat Magetan dengan sepenuh hati demi kenyamanan dan kelancaran ibadah ke Tanah Suci.'],
+    ['profile_vision', 'Terwujudnya pelayanan haji dan umrah yang profesional, transparan, akuntabel, berkeadilan, dan memberikan rasa aman serta kepuasan bagi masyarakat Kabupaten Magetan.'],
+    ['profile_mission', 'Meningkatkan kualitas tata kelola pelayanan pendaftaran dan pembatalan haji.\nMenyelenggarakan pembinaan manasik haji yang komprehensif dan mandiri.\nMemberikan pengawasan dan advokasi perlindungan bagi jemaah umrah.\nMemanfaatkan teknologi informasi untuk keterbukaan informasi publik yang cepat dan akurat.'],
+    ['profile_duties', 'Pelayanan Administrasi|Melaksanakan pendaftaran, verifikasi dokumen, pembatalan, dan pelimpahan porsi calon jemaah haji.\nPembinaan & Manasik|Merencanakan dan menyelenggarakan bimbingan manasik haji reguler tingkat kabupaten dan kecamatan.\nAdvokasi & Pengawasan Umrah|Sosialisasi legalitas Penyelenggara Perjalanan Ibadah Umrah (PPIU) serta fasilitasi pengaduan jemaah.\nLayanan Terpadu Satu Atap|Koordinasi bersama BPS BPIH, Dinas Kesehatan, dan instansi terkait keberangkatan jemaah haji.'],
+    ['profile_units', 'Loket Pendaftaran & Biometrik Haji\nLoket BPS BPIH Terpadu\nRuang Konsultasi & Advokasi Jemaah\nAula Pertemuan & Bimbingan Manasik'],
+    ['profile_office_photo', ''],
+    ['profile_office_photo_caption', 'Gedung PLHUT Kabupaten Magetan'],
     ['site_footer_text', '© 2025 PLHUT Kabupaten Magetan. Seluruh informasi bersifat resmi dan akurat.'],
     ['site_facebook', ''],
     ['site_instagram', ''],

@@ -96,9 +96,13 @@ ADMIN_PASSWORD=<ganti-dengan-sandi-kuat-minimal-12-karakter>
    - Periksa rincian laporan dan nomor referensi.
    - Perbarui status: *Baru*, *Dalam Proses*, *Menunggu Informasi*, *Selesai*, *Ditolak*.
    - Input catatan internal penanganan petugas.
+   - Filter status, pencarian, dan rentang tanggal.
+   - **Ekspor Excel (.xlsx)** sebagai arsip lengkap atau **PDF** sebagai laporan rekap siap cetak. Ekspor mengikuti filter aktif, dibatasi `EXPORT_MAX_ROWS` (default 5.000 baris), dan dicatat di activity log.
 8. **Riwayat Aktivitas (`/admin/aktivitas`):** Audit trail pencatatan setiap penambahan/pengubahan data.
 9. **Manajemen Pengguna (`/admin/pengguna`):** Tambah akun petugas baru, atur role (Administrator / Editor), dan reset kata sandi.
-10. **Pengaturan Website (`/admin/pengaturan`):** Ubah nama instansi, nomor kontak, alamat, sambutan pimpinan, dan tautan media sosial secara instan.
+10. **Profil Instansi (`/admin/profil`):** Perbarui sejarah, visi, misi, tugas/fungsi, dan unit layanan; unggah foto kantor, foto pimpinan, serta kelola data pegawai/karyawan beserta fotonya.
+11. **Pengaturan Website (`/admin/pengaturan`):** Ubah nama instansi, nomor kontak, alamat, sambutan pimpinan, dan tautan media sosial secara instan.
+12. **Ganti Kata Sandi:** tombol di sidebar dashboard untuk mengganti sandi akun yang sedang login (`PUT /api/users/me/password`).
 
 ---
 
@@ -144,8 +148,11 @@ ADMIN_PASSWORD=<ganti-dengan-sandi-kuat-minimal-12-karakter>
    PORT=3000
    JWT_SECRET=<ganti-dengan-string-acak-minimal-32-karakter>
    NODE_ENV=development
+   SITE_URL=
+   TRUST_PROXY=
    UPLOAD_DIR=uploads
    MAX_FILE_SIZE=5242880
+   EXPORT_MAX_ROWS=5000
    # Opsional: kredensial admin awal (dipakai hanya saat seed pertama kali)
    ADMIN_EMAIL=admin@plhut-magetan.go.id
    ADMIN_USERNAME=
@@ -155,16 +162,16 @@ ADMIN_PASSWORD=<ganti-dengan-sandi-kuat-minimal-12-karakter>
    > Server akan **menolak start** bila `JWT_SECRET` kosong atau kurang dari 32 karakter.
 
 4. Jalankan aplikasi dalam mode pengembangan:
-   - **Mode Fullstack Sekaligus (Vite Dev Server dengan Proxy API):**
-     Jalankan backend:
-     ```bash
-     npm run server
-     ```
-     Buka terminal kedua dan jalankan frontend:
+   - **Satu perintah (backend + frontend sekaligus):**
      ```bash
      npm run dev
      ```
+     Perintah ini menjalankan API Express di `http://localhost:3000` **dan** Vite di
+     `http://localhost:5173` (proxy `/api` diarahkan otomatis ke port backend).
      Akses melalui browser di: `http://localhost:5173`
+
+   - **Terpisah (dua terminal), bila diinginkan:**
+     Terminal 1: `npm run dev:api` &nbsp;•&nbsp; Terminal 2: `npm run dev:web`
 
 5. **Mode Produksi (Build & Single Server):**
    ```bash
@@ -172,6 +179,103 @@ ADMIN_PASSWORD=<ganti-dengan-sandi-kuat-minimal-12-karakter>
    npm start
    ```
    Akses melalui browser di: `http://localhost:3000`
+
+### Deployment Produksi (VPS + Nginx + PM2)
+
+1. **Siapkan `.env` produksi** (jangan commit file ini):
+   ```env
+   NODE_ENV=production
+   PORT=3000
+   SITE_URL=https://plhutmagetan.go.id
+   TRUST_PROXY=1
+   JWT_SECRET=<string-acak-minimal-32-karakter>
+   ADMIN_EMAIL=admin@plhut-magetan.go.id
+   ADMIN_PASSWORD=<sandi-kuat>
+   UPLOAD_DIR=uploads
+   MAX_FILE_SIZE=5242880
+   BACKUP_KEEP=30
+   EXPORT_MAX_ROWS=5000
+   ```
+   - `SITE_URL` dipakai untuk canonical, Open Graph, `robots.txt`, dan `sitemap.xml`.
+   - `TRUST_PROXY=1` diperlukan bila berada di belakang **satu** Nginx/Cloudflare
+     agar IP klien dan rate limit benar. Jangan memakai `true`.
+   - Setelah mengubah kredensial admin, jalankan sekali: `npm run admin:setup`.
+
+2. **Build dan jalankan dengan PM2:**
+   ```bash
+   npm ci
+   npm run build
+   npm install -g pm2
+   pm2 start ecosystem.config.cjs
+   pm2 save
+   pm2 startup
+   ```
+   Gunakan **satu instance** karena aplikasi memakai SQLite dan rate limiter
+   in-memory. Jangan memakai mode cluster sebelum memindahkan keduanya.
+
+3. **Contoh konfigurasi Nginx** (HTTPS diatur dengan Certbot/Let's Encrypt):
+   ```nginx
+   server {
+     listen 80;
+     server_name plhutmagetan.go.id www.plhutmagetan.go.id;
+     return 301 https://$host$request_uri;
+   }
+
+   server {
+     listen 443 ssl http2;
+     server_name plhutmagetan.go.id www.plhutmagetan.go.id;
+
+     client_max_body_size 10m;
+
+     location / {
+       proxy_pass http://127.0.0.1:3000;
+       proxy_http_version 1.1;
+       proxy_set_header Host $host;
+       proxy_set_header X-Real-IP $remote_addr;
+       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+       proxy_set_header X-Forwarded-Proto $scheme;
+       # Beri waktu untuk ekspor Excel/PDF berukuran besar
+       proxy_read_timeout 120s;
+       proxy_send_timeout 120s;
+     }
+   }
+   ```
+   Port `3000` tidak perlu dibuka ke internet; hanya Nginx yang mengaksesnya.
+
+4. **Backup database** (aman dilakukan saat server berjalan):
+   ```bash
+   npm run db:backup
+   ```
+   Simpan juga salinan ke storage eksternal. Contoh cron harian pukul 02.00:
+   ```cron
+   0 2 * * * cd /var/www/plhut-magetan && /usr/bin/node scripts/backup-db.mjs >> backups/backup.log 2>&1
+   ```
+   `BACKUP_KEEP` mengatur jumlah backup lokal yang disimpan (default 30).
+
+5. **Verifikasi setelah deploy:**
+   - `https://domain-anda/api/health` harus mengembalikan `{"status":"ok"}`.
+   - `https://domain-anda/sitemap.xml` dan `/robots.txt` dapat diakses.
+   - Folder `uploads/`, `database/`, dan `backups/` harus writable oleh user
+     yang menjalankan PM2, tetapi tidak boleh disajikan sebagai file statis
+     selain `uploads/`.
+
+### Jika login admin gagal
+1. **Pastikan backend benar-benar berjalan.** Membuka `http://localhost:5173` tanpa
+   backend hanya menampilkan pesan "Tidak dapat terhubung ke server". Gunakan
+   `npm run dev` (bukan `npm run dev:web` saja), lalu cek
+   `http://localhost:3000/api/health` harus mengembalikan `{"status":"ok"}`.
+2. **Kredensial awal hanya di-seed sekali.** Mengubah `ADMIN_EMAIL` /
+   `ADMIN_USERNAME` / `ADMIN_PASSWORD` di `.env` **tidak** mengubah akun yang sudah
+   ada di database. Untuk menyamakan akun admin dengan isi `.env`, jalankan:
+   ```bash
+   npm run admin:setup
+   ```
+   Server juga mencetak peringatan saat start bila `ADMIN_PASSWORD` di `.env`
+   berbeda dengan sandi akun admin yang tersimpan.
+3. **Perhatikan batas percobaan login.** Lebih dari 20 percobaan gagal dalam 15
+   menit akan menghasilkan HTTP 429. Tunggu 15 menit atau restart server.
+4. Bila perlu mengulang dari nol, hentikan server lalu hapus `database/plhut.db*`
+   (data akan dibuat ulang saat server dijalankan).
 
 ---
 

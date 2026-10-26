@@ -3,4 +3,6 @@ Allow: /
 Disallow: /admin
 Disallow: /api
 
-# Sitemap: <isi URL domain resmi>/sitemap.xml  (aktifkan setelah domain final ditetapkan)
+# Sitemap dinamis: /sitemap.xml (server mengisi URL absolut dari SITE_URL)
+# Jika dist disajikan langsung oleh web server lain, tambahkan:
+# Sitemap: https://domain-resmi-anda/sitemap.xml

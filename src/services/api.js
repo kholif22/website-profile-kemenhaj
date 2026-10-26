@@ -13,11 +13,17 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle auth errors globally
+// Handle auth errors globally. Redirect hanya ketika pengguna sedang berada di
+// area admin dan kegagalan bukan berasal dari pemeriksaan sesi (/auth/me),
+// supaya pengunjung publik dengan token kedaluwarsa tidak ikut terlempar.
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const status = error.response?.status;
+    const url = error.config?.url || '';
+    const isAdminArea = window.location.pathname.startsWith('/admin')
+      && window.location.pathname !== '/admin/login';
+    if (status === 401 && isAdminArea && !url.includes('/auth/me')) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/admin/login';
@@ -42,6 +48,23 @@ export const authAPI = {
 export const settingsAPI = {
   getAll: () => api.get('/settings'),
   update: (data) => api.put('/settings', data),
+  uploadPhoto: (key, file) => {
+    const formData = new FormData();
+    formData.append('key', key);
+    formData.append('photo', file);
+    return api.post('/settings/photo', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+  },
+  deletePhoto: (key) => api.delete(`/settings/photo/${key}`),
+};
+
+// ============================================================
+// STAFF / PEGAWAI
+// ============================================================
+export const staffAPI = {
+  getAll: (params) => api.get('/staff', { params }),
+  create: (formData) => api.post('/staff', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  update: (id, formData) => api.put(`/staff/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  delete: (id) => api.delete(`/staff/${id}`),
 };
 
 // ============================================================
@@ -104,6 +127,12 @@ export const complaintsAPI = {
   getAll: (params) => api.get('/complaints', { params }),
   getById: (id) => api.get(`/complaints/${id}`),
   updateStatus: (id, data) => api.put(`/complaints/${id}/status`, data),
+  exportData: (params) => api.get('/complaints/export', {
+    params,
+    responseType: 'blob',
+    // Pembuatan PDF/Excel untuk ribuan baris bisa melebihi timeout API biasa.
+    timeout: 120000,
+  }),
 };
 
 // ============================================================
@@ -114,6 +143,7 @@ export const usersAPI = {
   create: (data) => api.post('/users', data),
   update: (id, data) => api.put(`/users/${id}`, data),
   delete: (id) => api.delete(`/users/${id}`),
+  changePassword: (data) => api.put('/users/me/password', data),
 };
 
 // ============================================================

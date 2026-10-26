@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { servicesAPI, faqsAPI } from '../../services/api';
-import { useSiteSettings } from '../../hooks/useSiteSettings';
+import { useSEO } from '../../hooks/useSEO';
 import { PageHeader, SectionHeader, InfoAlert, Accordion, LoadingSpinner } from '../../components/ui/index';
 import { BookOpen, FileCheck, CheckCircle2, ExternalLink, HelpCircle, ShieldAlert } from 'lucide-react';
 
 export default function HajjPage() {
-  const { settings } = useSiteSettings();
+  useSEO({
+    title: 'Layanan Haji',
+    description: 'Panduan pendaftaran porsi, persyaratan dokumen, biometrik, dan alur pelayanan haji reguler Kabupaten Magetan.',
+    url: '/layanan-haji',
+  });
   const [services, setServices] = useState([]);
   const [faqs, setFaqs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    document.title = `Layanan Haji - ${settings.site_short_name || 'PLHUT Magetan'}`;
     window.scrollTo(0, 0);
 
     Promise.all([
@@ -24,7 +27,7 @@ export default function HajjPage() {
       })
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));
-  }, [settings.site_short_name]);
+  }, []);
 
   return (
     <div className="pb-20">

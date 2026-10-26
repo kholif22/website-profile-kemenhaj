@@ -10,12 +10,15 @@ const router = express.Router();
 router.get('/', optionalAuth, async (req, res) => {
   try {
     const db = await getDatabase();
-    const { all } = req.query;
+    const { all, home } = req.query;
     if (all === 'true' && !req.user) return res.status(403).json({ error: 'Akses ditolak.' });
     let query = `SELECT * FROM announcements`;
     const params = [];
     if (all !== 'true') {
-      query += ` WHERE status = 'active' AND (end_date IS NULL OR end_date >= date('now'))`;
+      query += ` WHERE status = 'active'
+        AND (start_date IS NULL OR start_date <= date('now'))
+        AND (end_date IS NULL OR end_date >= date('now'))`;
+      if (home === 'true') query += ` AND show_on_home = 1`;
     }
     query += ` ORDER BY priority DESC, created_at DESC`;
     const data = await db.all(query, params);

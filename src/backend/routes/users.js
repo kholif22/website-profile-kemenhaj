@@ -101,8 +101,21 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
       return res.status(400).json({ error: 'Tidak dapat menghapus akun sendiri.' });
     }
     const db = await getDatabase();
-    const user = await db.get(`SELECT name FROM users WHERE id = ?`, [req.params.id]);
+    const user = await db.get(`SELECT name, role, is_active FROM users WHERE id = ?`, [req.params.id]);
     if (!user) return res.status(404).json({ error: 'Pengguna tidak ditemukan.' });
+
+    // Jangan sampai sistem kehilangan administrator aktif terakhir.
+    if (user.role === 'admin' && user.is_active) {
+      const activeAdmins = await db.get(`SELECT COUNT(*) as total FROM users WHERE role = 'admin' AND is_active = 1`);
+      if ((activeAdmins?.total || 0) <= 1) {
+        return res.status(400).json({ error: 'Tidak dapat menghapus administrator aktif terakhir.' });
+      }
+    }
+
+    // Lepaskan referensi foreign key sebelum menghapus akun. Nama petugas tetap
+    // tersimpan pada activity_logs.user_name sehingga jejak audit tidak hilang.
+    await db.run(`UPDATE news SET created_by = NULL WHERE created_by = ?`, [req.params.id]);
+    await db.run(`UPDATE activity_logs SET user_id = NULL WHERE user_id = ?`, [req.params.id]);
     await db.run(`DELETE FROM users WHERE id = ?`, [req.params.id]);
     await logActivity(req.user.id, req.user.name, `Menghapus pengguna: ${user.name}`, 'user', req.params.id, user.name);
     res.json({ message: 'Pengguna berhasil dihapus.' });

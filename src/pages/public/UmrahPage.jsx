@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { servicesAPI, faqsAPI } from '../../services/api';
-import { useSiteSettings } from '../../hooks/useSiteSettings';
+import { useSEO } from '../../hooks/useSEO';
 import { PageHeader, SectionHeader, InfoAlert, Accordion, LoadingSpinner } from '../../components/ui/index';
 import { ShieldCheck, CheckCircle2, AlertTriangle, ExternalLink, FileText, PhoneCall, HelpCircle } from 'lucide-react';
 
 export default function UmrahPage() {
-  const { settings } = useSiteSettings();
+  useSEO({
+    title: 'Layanan & Edukasi Umrah',
+    description: 'Panduan Gerakan 5 Pasti Umrah, persyaratan dokumen, dan verifikasi legalitas PPIU di Kabupaten Magetan.',
+    url: '/layanan-umrah',
+  });
   const [services, setServices] = useState([]);
   const [faqs, setFaqs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    document.title = `Layanan Umrah - ${settings.site_short_name || 'PLHUT Magetan'}`;
     window.scrollTo(0, 0);
 
     Promise.all([
@@ -24,7 +27,7 @@ export default function UmrahPage() {
       })
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));
-  }, [settings.site_short_name]);
+  }, []);
 
   return (
     <div className="pb-20">

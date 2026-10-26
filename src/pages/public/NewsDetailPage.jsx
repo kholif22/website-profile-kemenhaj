@@ -1,18 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { newsAPI } from '../../services/api';
-import { useSiteSettings } from '../../hooks/useSiteSettings';
+import { useSEO } from '../../hooks/useSEO';
 import { PageHeader, LoadingSpinner, Badge, EmptyState } from '../../components/ui/index';
-import { formatDate, categoryClass } from '../../utils/helpers';
+import { formatDate, categoryClass, stripHtml, formatNewsContent } from '../../utils/helpers';
 import { Calendar, User, ArrowLeft, Share2, Tag, BookOpen } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function NewsDetailPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const { settings } = useSiteSettings();
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const seoDescription = article
+    ? (article.excerpt || stripHtml(article.content || '').slice(0, 155))
+    : 'Artikel berita dan informasi resmi PLHUT Kabupaten Magetan.';
+
+  useSEO({
+    title: article ? article.title : (loading ? 'Memuat Berita' : 'Berita Tidak Ditemukan'),
+    description: seoDescription,
+    image: article?.image,
+    type: 'article',
+    url: article ? `/berita/${article.slug}` : undefined,
+    noIndex: !loading && !article,
+  });
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -21,14 +33,13 @@ export default function NewsDetailPage() {
     newsAPI.getBySlug(slug)
       .then((res) => {
         setArticle(res.data);
-        document.title = `${res.data.title} - ${settings.site_short_name || 'PLHUT Magetan'}`;
       })
       .catch((err) => {
         console.error(err);
         setArticle(null);
       })
       .finally(() => setLoading(false));
-  }, [slug, settings.site_short_name]);
+  }, [slug]);
 
   const handleShare = () => {
     if (navigator.share) {
@@ -112,18 +123,18 @@ export default function NewsDetailPage() {
 
           {/* Featured Image */}
           {article.image && (
-            <div className="mb-8 rounded-2xl overflow-hidden shadow-xs">
+            <div className="mb-8 rounded-2xl overflow-hidden shadow-xs bg-stone-100 flex items-center justify-center">
               <img
                 src={article.image}
                 alt={article.title}
-                className="w-full max-h-[460px] object-cover"
+                className="w-full max-h-[460px] object-contain"
               />
             </div>
           )}
 
           {/* Excerpt if available */}
           {article.excerpt && (
-            <div className="p-4 mb-8 rounded-xl bg-stone-50 border-l-4 border-yellow-600 text-sm font-medium text-gray-800 italic leading-relaxed">
+            <div className="p-4 mb-8 rounded-xl bg-stone-50 border-l-4 border-yellow-600 text-sm font-medium text-gray-800 italic leading-relaxed whitespace-pre-line">
               {article.excerpt}
             </div>
           )}
@@ -131,7 +142,7 @@ export default function NewsDetailPage() {
           {/* Article Body */}
           <div
             className="prose-plhut text-sm md:text-base leading-relaxed text-gray-800"
-            dangerouslySetInnerHTML={{ __html: article.content }}
+            dangerouslySetInnerHTML={{ __html: formatNewsContent(article.content) }}
           />
 
           {/* Footer of article */}

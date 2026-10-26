@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { complaintsAPI, faqsAPI } from '../../services/api';
 import { useSiteSettings } from '../../hooks/useSiteSettings';
+import { useSEO } from '../../hooks/useSEO';
 import { PageHeader, SectionHeader, InfoAlert, FormGroup, Accordion, LoadingSpinner } from '../../components/ui/index';
 import { MessageSquare, Send, Clock, Phone, Mail, CheckCircle2, ShieldCheck, HelpCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function ComplaintPage() {
   const { settings } = useSiteSettings();
+  useSEO({
+    title: 'Pusat Informasi & Pengaduan',
+    description: 'Sampaikan pengaduan, pertanyaan, atau laporan pelayanan haji dan umrah kepada PLHUT Kabupaten Magetan.',
+    url: '/pengaduan',
+  });
   const [faqs, setFaqs] = useState([]);
   const [loadingFaqs, setLoadingFaqs] = useState(true);
 
@@ -24,7 +30,6 @@ export default function ComplaintPage() {
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    document.title = `Pusat Informasi & Pengaduan - ${settings.site_short_name || 'PLHUT Magetan'}`;
     window.scrollTo(0, 0);
 
     faqsAPI.getAll()
